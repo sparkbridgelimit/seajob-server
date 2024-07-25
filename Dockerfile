@@ -19,7 +19,7 @@ RUN mkdir -p /root/.cargo && \
 
 # Set the workdir and copy the source into it
 WORKDIR /app
-COPY ./ /app
+COPY .seajob-server /app
 
 # Do a release build
 RUN cargo build --release
