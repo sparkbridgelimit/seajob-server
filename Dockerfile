@@ -19,7 +19,8 @@ RUN mkdir -p /root/.cargo && \
 
 # Set the workdir and copy the source into it
 WORKDIR /app
-COPY .seajob-server /app
+COPY seajob-server/Cargo.toml seajob-server/Cargo.lock ./
+COPY seajob-server/src ./src
 
 # Do a release build
 RUN cargo build --release
