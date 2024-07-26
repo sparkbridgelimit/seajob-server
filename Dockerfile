@@ -10,17 +10,9 @@ RUN set -eux && sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk
 # Install necessary dependencies for building the application
 RUN apk add --no-cache musl-dev pkgconfig openssl-dev git
 
-# Configure Cargo to use the USTC mirror for crates.io
-# RUN mkdir -p /root/.cargo && \
-#     echo '[source.crates-io]' > /root/.cargo/config && \
-#     echo 'replace-with = "ustc"' >> /root/.cargo/config && \
-#     echo '[source.ustc]' >> /root/.cargo/config && \
-#     echo 'registry = "https://mirrors.ustc.edu.cn/crates.io-index"' >> /root/.cargo/config
-
 # Set the workdir and copy the source into it
 WORKDIR /app
-COPY seajob-server/Cargo.toml seajob-server/Cargo.lock ./
-COPY seajob-server/src ./src
+COPY seajob-server/ ./
 
 # Do a release build
 RUN cargo build --release
