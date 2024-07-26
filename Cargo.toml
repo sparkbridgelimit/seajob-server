@@ -3,12 +3,12 @@ name = "seajob-server"
 version = "0.1.0"
 edition = "2021"
 
+[workspace]
+members = [".", "api", "service", "entity", "migration", "common"]
+
 [dependencies]
-actix-web = "4.8.0"
-listenfd = "1.0.1"
-serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.120"
-tokio = "1.39.1"
+seajob-api = { path = "api" }
+seajob-service = { path = "service" }
 
 [profile.release]
 codegen-units = 1

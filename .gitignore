@@ -1,1 +1,4 @@
 /target
+/api/target/
+/entity/target/
+/service/target/

@@ -1,0 +1,15 @@
+[package]
+name = "seajob-service"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "seajob_service"
+path = "src/lib.rs"
+
+[dependencies]
+sea-orm = { version = "0.12.15", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros" ] }
+seajob-entity = { path = "../entity" }
+seajob-common = { path = "../common" }
+tokio = "1.39.1"
+
