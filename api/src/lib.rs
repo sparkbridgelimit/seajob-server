@@ -1,7 +1,7 @@
 mod router;
 mod index;
 mod job_define;
-mod contacted_job;
+mod job_contacted;
 
 use std::env;
 
@@ -33,7 +33,7 @@ pub async fn start() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(state.clone()))
             .wrap(middleware::Logger::default()) // enable logger
-            .configure(router::config)
+            .configure(router::entry)
     });
 
     // 绑定文件描述符, 使得重启后可以继续连接原来的tcp

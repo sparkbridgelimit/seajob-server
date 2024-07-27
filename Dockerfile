@@ -1,5 +1,5 @@
 # Use the private Rust image from docker.aleksiwork.com as the build environment
-FROM rust:1.79.0-alpine3.20 as builder
+FROM rust:1.80.0-alpine3.20 as builder
 
 # This is important, see https://github.com/rust-lang/docker-rust/issues/85
 ENV RUSTFLAGS="-C target-feature=-crt-static"
