@@ -39,3 +39,7 @@
     ```sh
     cargo run -- status
     ```
+
+sea-orm-cli migrate generate add_job_define -d .
+
+SQLX_DISABLE_STATEMENT_LOGGING=true DATABASE_URL=postgres://seajob:seajobHm3hd@175.178.4.46:30033/seajob cargo run

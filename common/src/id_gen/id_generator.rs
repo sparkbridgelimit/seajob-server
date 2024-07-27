@@ -1,5 +1,10 @@
-use crate::id_gen::default_id_generator::DefaultIdGenerator;
+use std::sync::{LazyLock, Mutex};
+use crate::id_gen::default_id_generator::{DefaultIdGenerator};
 use crate::id_gen::id_generator_options::IdGeneratorOptions;
+
+pub static GLOBAL_IDGEN: LazyLock<Mutex<IDGenerator>> = LazyLock::new(|| Mutex::new(
+    IDGenerator::new()
+));
 
 pub struct IDGenerator {
     idgen: DefaultIdGenerator,
@@ -13,7 +18,7 @@ impl IDGenerator {
         IDGenerator { idgen }
     }
 
-    pub fn next_id(&self) -> Result<u64, &'static str> {
+    pub fn next_id(&self) -> Result<i64, &'static str> {
         self.idgen.next_id()
     }
 }

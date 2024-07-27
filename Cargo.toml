@@ -9,6 +9,7 @@ members = [".", "api", "service", "entity", "migration", "common"]
 [dependencies]
 seajob-api = { path = "api" }
 seajob-service = { path = "service" }
+seajob-common = { path = "common" }
 
 [profile.release]
 codegen-units = 1

@@ -4,7 +4,7 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::async_trait::async_trait;
 use serde::Serialize;
 use strum_macros::{EnumString, Display};
-use ulid::Ulid;
+use seajob_common::id_gen::id_generator::{GLOBAL_IDGEN};
 
 #[derive(Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum, EnumString, Display, Serialize)]
 #[sea_orm(rs_type = "String", db_type = "String(Some(16))")]
@@ -19,27 +19,20 @@ pub enum Status {
     ApplyResume,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum, EnumString, Display, Serialize)]
-#[sea_orm(rs_type = "String", db_type = "String(Some(16))")]
-pub enum Channel {
-    #[sea_orm(string_value = "boss")]
-    BOSS,
-}
-
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
-#[sea_orm(table_name = "contacted_job")]
+#[sea_orm(table_name = "job_contacted")]
 pub struct Model {
-    #[sea_orm(primary_key, column_type = "Char(Some(26))", comment = "Primary key")]
-    pub contacted_job_id: String,
+    #[sea_orm(primary_key, comment = "Primary key")]
+    pub id: i64,
 
-    #[sea_orm(column_type = "Char(Some(26))", comment = "关联的JobDefineId")]
-    pub job_define_id: String,
+    #[sea_orm(comment = "关联的JobDefineId")]
+    pub job_define_id: i64,
 
-    #[sea_orm(column_type = "Char(Some(26))", comment = "关联的任务id")]
-    pub job_task_id: String,
+    #[sea_orm(comment = "关联的任务id")]
+    pub job_task_id: i64,
 
-    #[sea_orm(column_type = "Char(Some(26))", comment = "关联的用户id")]
-    pub user_id: String,
+    #[sea_orm(comment = "关联的用户id")]
+    pub user_id: i64,
 
     #[sea_orm(comment = "岗位名称")]
     pub job_name: String,
@@ -56,11 +49,8 @@ pub struct Model {
     #[sea_orm(comment = "地点")]
     pub address: String,
 
-    #[sea_orm(comment = "薪资范围")]
+    #[sea_orm(comment = "薪资范围: [10, 20]")]
     pub salary_range: String,
-
-    #[sea_orm(comment = "渠道")]
-    pub channel: Channel,
 
     #[sea_orm(comment = "状态")]
     pub status: Status,
@@ -75,11 +65,13 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}
 
+
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
     fn new() -> Self {
+        let idgen = GLOBAL_IDGEN.lock().unwrap();
         Self {
-            contacted_job_id: Set(Ulid::new().to_string()),
+            id: Set(idgen.next_id().unwrap()),
             create_time: Set(Utc::now()),
             update_time: Set(Utc::now()),
             ..ActiveModelTrait::default()
@@ -92,10 +84,11 @@ impl ActiveModelBehavior for ActiveModel {
         C: ConnectionTrait,
     {
         let now = Utc::now();
+        let idgen = GLOBAL_IDGEN.lock().unwrap();
 
         // 如果没有设置id, 则默认给一个
-        if self.contacted_job_id.is_not_set() {
-            self.contacted_job_id = Set(Ulid::new().to_string());
+        if self.id.is_not_set() {
+            self.id = Set(idgen.next_id().unwrap());
         }
 
         // 新插入的则设置创建时间

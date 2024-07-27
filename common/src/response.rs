@@ -11,6 +11,8 @@ pub struct ApiResponse<T> {
     err_message: Option<String>,
 }
 
+pub type ApiErrorResponse = ApiResponse<()>;
+
 impl<T> ApiResponse<T>
 where
     T: Serialize,
@@ -23,12 +25,15 @@ where
             err_message: None,
         }
     }
+}
 
+// 专门为 ApiResponse<()> 定义 fail 和 fail_with_error 方法
+impl ApiResponse<()> {
     pub fn fail() -> Self {
         ApiResponse {
             success: false,
             data: None,
-            err_code: Some(0000),
+            err_code: Some(0),
             err_message: Some("系统异常".to_string()),
         }
     }

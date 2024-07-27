@@ -1,32 +1,32 @@
 mod router;
 mod index;
+mod job_define;
+mod contacted_job;
 
 use std::env;
 
 use actix_web::{App, HttpServer, middleware, web};
 use listenfd::ListenFd;
 use env_logger::Env;
-use sea_orm::{Database, DatabaseConnection};
+use seajob_common::db;
+use seajob_service::entry::init_services;
 
 #[derive(Debug, Clone)]
-struct AppState {
-    conn: DatabaseConnection,
-}
+struct AppState {}
 
 // 服务主入口
 #[actix_web::main]
 pub async fn start() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
+    init_services();
+    db::init_db().await;
+
+    let state = AppState {};
 
     // 环境配置获取
     let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
     let server_url = format!("{host}:{port}");
-
-    // 连接数据库
-    let conn = Database::connect(&db_url).await.unwrap();
-    let state = AppState { conn };
 
     // actix-web实例
     let mut server = HttpServer::new(move || {

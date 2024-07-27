@@ -4,7 +4,7 @@ use crate::id_gen::id_generator_options::IdGeneratorOptions;
 
 pub struct Snowflake {
     options: IdGeneratorOptions,
-    sequence: u64,
+    sequence: i64,
     last_timestamp: i64,
     lock: Mutex<()>,
 }
@@ -20,9 +20,10 @@ impl Snowflake {
     }
 
     fn timestamp(&self) -> i64 {
-        let start = SystemTime::now();
-        let since_the_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
-        (since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_millis() as u64) as i64
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_millis() as i64
     }
 
     fn til_next_millis(&self, last_timestamp: i64) -> i64 {
@@ -33,7 +34,7 @@ impl Snowflake {
         timestamp
     }
 
-    pub fn next_id(&mut self) -> Result<u64, &'static str> {
+    pub fn next_id(&mut self) -> Result<i64, &'static str> {
         let _lock = self.lock.lock().unwrap();
 
         let mut timestamp = self.timestamp();
@@ -53,7 +54,7 @@ impl Snowflake {
 
         self.last_timestamp = timestamp;
 
-        let id = ((timestamp as u64 - self.options.base_time) << (self.options.worker_id_bit_length + self.options.seq_bit_length))
+        let id = ((timestamp - self.options.base_time) << (self.options.worker_id_bit_length + self.options.seq_bit_length))
             | (self.options.worker_id << self.options.seq_bit_length)
             | self.sequence;
 
@@ -74,7 +75,7 @@ impl DefaultIdGenerator {
         self.snowflake = Some(Arc::new(Mutex::new(Snowflake::new(options))));
     }
 
-    pub fn next_id(&self) -> Result<u64, &'static str> {
+    pub fn next_id(&self) -> Result<i64, &'static str> {
         if let Some(ref snowflake) = self.snowflake {
             let mut snowflake = snowflake.lock().unwrap();
             snowflake.next_id()
