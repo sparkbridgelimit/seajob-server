@@ -2741,6 +2741,7 @@ dependencies = [
  "log",
  "sea-orm",
  "seajob-common",
+ "seajob-dto",
  "seajob-service",
  "serde",
  "serde_json",
@@ -2760,6 +2761,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "seajob-dto"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "seajob-entity"
 version = "0.1.0"
 dependencies = [
@@ -2776,8 +2784,6 @@ name = "seajob-server"
 version = "0.1.0"
 dependencies = [
  "seajob-api",
- "seajob-common",
- "seajob-service",
 ]
 
 [[package]]
@@ -2785,9 +2791,12 @@ name = "seajob-service"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "log",
  "sea-orm",
  "seajob-common",
+ "seajob-dto",
  "seajob-entity",
+ "serde_json",
  "tokio",
 ]
 

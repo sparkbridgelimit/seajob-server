@@ -21,7 +21,6 @@ pub async fn init_db() {
         .unwrap_or_else(|e| panic!("数据库连接失败：{}", e));
 
     let _ = conn.ping().await.is_err_and(|e| panic!("数据库连接失败：{}", e));
-
     let _ = DB.set(conn);
 }
 

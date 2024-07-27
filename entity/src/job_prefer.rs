@@ -20,7 +20,7 @@ pub struct Model {
     pub id: i64,
 
     #[sea_orm(comment = "关联的用户id")]
-    pub user_id: i64,
+    pub job_define_id: i64,
 
     #[sea_orm(comment = "职位关键字")]
     pub keyword: String,
@@ -40,9 +40,6 @@ pub struct Model {
     #[sea_orm(comment = "不想要的岗位")]
     pub exclude_job: String,
 
-    #[sea_orm(comment = "渠道")]
-    pub channel: Channel,
-
     #[sea_orm(comment = "创建时间")]
     pub create_time: DateTime<Utc>,
 
@@ -56,9 +53,12 @@ pub enum Relation {}
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
     fn new() -> Self {
-        let idgen = GLOBAL_IDGEN.lock().unwrap();
+        let id = {
+            let id_gen = GLOBAL_IDGEN.lock().unwrap();
+            id_gen.next_id().unwrap()
+        };
         Self {
-            id: Set(idgen.next_id().unwrap()),
+            id: Set(id),
             create_time: Set(Utc::now()),
             update_time: Set(Utc::now()),
             ..ActiveModelTrait::default()
@@ -71,11 +71,14 @@ impl ActiveModelBehavior for ActiveModel {
         C: ConnectionTrait,
     {
         let now = Utc::now();
-        let idgen = GLOBAL_IDGEN.lock().unwrap();
+        let id = {
+            let id_gen = GLOBAL_IDGEN.lock().unwrap();
+            id_gen.next_id().unwrap()
+        };
 
         // 如果没有设置id, 则默认给一个
         if self.id.is_not_set() {
-            self.id = Set(idgen.next_id().unwrap());
+            self.id = Set(id);
         }
 
         // 新插入的则设置创建时间

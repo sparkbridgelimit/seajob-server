@@ -6,5 +6,6 @@ pub fn config(cfg: &mut web::ServiceConfig) -> () {
     cfg
         .service(index::index)
         .service(index::find_contacted_job)
-        .service(job_define::all_job_define);
+        .service(job_define::all_job_define)
+        .service(job_define::create_job_define);
 }

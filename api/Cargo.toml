@@ -10,6 +10,7 @@ path = "src/lib.rs"
 [dependencies]
 seajob-service = { path = "../service" }
 seajob-common = { path = "../common" }
+seajob-dto = { path = "../dto" }
 actix-web = "4.8.0"
 listenfd = "1.0.1"
 serde = { version = "1.0.204", features = ["derive"] }

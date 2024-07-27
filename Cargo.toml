@@ -4,12 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = [".", "api", "service", "entity", "migration", "common"]
+members = [".", "api", "service", "entity", "migration", "common", "dto"]
 
 [dependencies]
 seajob-api = { path = "api" }
-seajob-service = { path = "service" }
-seajob-common = { path = "common" }
 
 [profile.release]
 codegen-units = 1
