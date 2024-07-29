@@ -2,6 +2,7 @@ mod router;
 mod index;
 mod job_define;
 mod job_contacted;
+mod job_task;
 
 use std::env;
 

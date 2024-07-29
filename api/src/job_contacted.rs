@@ -1,4 +1,4 @@
-use actix_web::{Error, get, HttpRequest, HttpResponse, post, web};
+use actix_web::{Error, get, HttpRequest, HttpResponse, web};
 use seajob_common::response::ApiResponse;
 use crate::AppState;
 
@@ -20,12 +20,5 @@ pub async fn all_contacted_by_job_define(_req: HttpRequest, _: web::Data<AppStat
 #[get("/by/job_task/list")]
 pub async fn contacted_by_job_task_all(_req: HttpRequest, _: web::Data<AppState>) -> Result<HttpResponse, Error> {
     let response = ApiResponse::success("/contacted/by/job_task/list");
-    Ok(HttpResponse::Ok().json(response))
-}
-
-// TODO: 记录一个已沟通岗位
-#[post("/by/job_task/create")]
-pub async fn contacted_by_job_task_create(_req: HttpRequest, _: web::Data<AppState>) -> Result<HttpResponse, Error> {
-    let response = ApiResponse::success("/contacted/by/job_task/create");
     Ok(HttpResponse::Ok().json(response))
 }

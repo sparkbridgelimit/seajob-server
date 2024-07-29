@@ -14,11 +14,26 @@ pub struct Model {
     #[sea_orm(comment = "关联的计划ID")]
     pub job_define_id: i64,
 
+    #[sea_orm(comment = "任务状态")]
+    pub status: String,
+
+    #[sea_orm(comment = "wt2_cookie")]
+    pub wt2_cookie: Option<String>,
+
+    #[sea_orm(comment = "目标数量")]
+    pub target_num: i32,
+
+    #[sea_orm(comment = "完成数量")]
+    pub done_num: i32,
+
+    #[sea_orm(comment = "错误")]
+    pub last_error: String,
+
     #[sea_orm(comment = "创建时间")]
-    pub create_time: DateTime<Utc>,
+    pub create_time: Option<DateTime<Utc>>,
 
     #[sea_orm(comment = "更新时间")]
-    pub update_time: DateTime<Utc>,
+    pub update_time: Option<DateTime<Utc>>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -33,8 +48,8 @@ impl ActiveModelBehavior for ActiveModel {
         };
         Self {
             id: Set(id),
-            create_time: Set(Utc::now()),
-            update_time: Set(Utc::now()),
+            create_time: Set(Option::from(Utc::now())),
+            update_time: Set(Option::from(Utc::now())),
             ..ActiveModelTrait::default()
         }
     }
@@ -56,10 +71,10 @@ impl ActiveModelBehavior for ActiveModel {
 
         // 新插入的则设置创建时间
         if insert {
-            self.create_time = Set(now);
+            self.create_time = Set(Option::from(now));
         }
 
-        self.update_time = Set(now);
+        self.update_time = Set(Option::from(now));
 
         Ok(self)
     }

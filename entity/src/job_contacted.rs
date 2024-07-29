@@ -24,42 +24,18 @@ pub enum Status {
 pub struct Model {
     #[sea_orm(primary_key, comment = "Primary key")]
     pub id: i64,
-
-    #[sea_orm(comment = "关联的JobDefineId")]
     pub job_define_id: i64,
-
-    #[sea_orm(comment = "关联的任务id")]
     pub job_task_id: i64,
-
-    #[sea_orm(comment = "关联的用户id")]
     pub user_id: i64,
-
-    #[sea_orm(comment = "岗位名称")]
     pub job_name: String,
-
-    #[sea_orm(comment = "岗位链接")]
     pub job_link: String,
-
-    #[sea_orm(comment = "公司名称")]
     pub company: String,
-
-    #[sea_orm(comment = "招聘者")]
     pub boss_name: String,
-
-    #[sea_orm(comment = "地点")]
     pub address: String,
-
-    #[sea_orm(comment = "薪资范围: [10, 20]")]
     pub salary_range: String,
-
-    #[sea_orm(comment = "状态")]
     pub status: Status,
-
-    #[sea_orm(comment = "创建时间")]
-    pub create_time: DateTime<Utc>,
-
-    #[sea_orm(comment = "更新时间")]
-    pub update_time: DateTime<Utc>,
+    pub create_time: Option<DateTime<Utc>>,
+    pub update_time: Option<DateTime<Utc>>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -77,8 +53,8 @@ impl ActiveModelBehavior for ActiveModel {
 
         Self {
             id: Set(id),
-            create_time: Set(Utc::now()),
-            update_time: Set(Utc::now()),
+            create_time: Set(Option::from(Utc::now())),
+            update_time: Set(Option::from(Utc::now())),
             ..ActiveModelTrait::default()
         }
     }
@@ -100,10 +76,10 @@ impl ActiveModelBehavior for ActiveModel {
 
         // 新插入的则设置创建时间
         if insert {
-            self.create_time = Set(now);
+            self.create_time = Set(Option::from(now));
         }
 
-        self.update_time = Set(now);
+        self.update_time = Set(Option::from(now));
 
         Ok(self)
     }

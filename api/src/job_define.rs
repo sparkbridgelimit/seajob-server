@@ -4,11 +4,11 @@ use seajob_common::response::{ApiErr, ApiResponse};
 use crate::AppState;
 use seajob_service::entry::JOB_DEFINE_SERVICE;
 use log::error;
-use seajob_dto::req::job_define_create::JobDefineCreateRequest;
+use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineRunRequest};
 use seajob_service::job_define::JobDefineService;
 
 // TODO: 获取所有投递计划
-#[get("/list")]
+#[get("/")]
 pub async fn all_job_define(_req: HttpRequest, _: web::Data<AppState>) -> Result<HttpResponse, Error> {
     let job_define_service = JOB_DEFINE_SERVICE.get().unwrap();
 
@@ -26,7 +26,7 @@ pub async fn all_job_define(_req: HttpRequest, _: web::Data<AppState>) -> Result
 }
 
 // TODO 创建投递计划
-#[post("/create")]
+#[post("/")]
 pub async fn create_job_define(json: web::Json<JobDefineCreateRequest>) -> Result<HttpResponse, Error> {
     let req = json.into_inner();
     match JobDefineService::create(req).await {
@@ -42,15 +42,31 @@ pub async fn create_job_define(json: web::Json<JobDefineCreateRequest>) -> Resul
 }
 
 // TODO 更新投递计划
-#[put("/update")]
+#[put("/")]
 pub async fn update_job_define(_req: HttpRequest, _: web::Data<AppState>) -> Result<HttpResponse, Error> {
     let response = ApiResponse::success("hello man");
+
     Ok(HttpResponse::Ok().json(response))
 }
 
 // TODO 删除投递计划
-#[delete("/delete")]
+#[delete("/")]
 pub async fn delete_job_define(_req: HttpRequest, _: web::Data<AppState>) -> Result<HttpResponse, Error> {
     let response = ApiResponse::success("hello man");
     Ok(HttpResponse::Ok().json(response))
+}
+
+#[post("/run")]
+pub async fn run(req: web::Json<JobDefineRunRequest>) -> Result<HttpResponse, Error> {
+    match JobDefineService::run(req.into_inner()).await {
+        Ok(data) => {
+            let response = ApiResponse::success(data);
+            Ok(HttpResponse::Ok().json(response))
+        }
+        Err(e) => {
+            error!("Failed to create job defines: {:?}", e);
+            let error_response = ApiResponse::fail();
+            Ok(HttpResponse::Ok().json(error_response))
+        }
+    }
 }
