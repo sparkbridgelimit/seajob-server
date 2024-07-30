@@ -1,5 +1,5 @@
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, QuerySelect, TransactionTrait};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, TransactionTrait};
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineRunRequest, JobDefineUserAllRequest};
