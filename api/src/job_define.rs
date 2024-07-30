@@ -1,15 +1,18 @@
-use actix_web::{delete, Error, get, HttpRequest, HttpResponse, post, put, web};
+use actix_web::{delete, get, post, put, web, Error, HttpRequest, HttpResponse};
 use seajob_common::response::{ApiErr, ApiResponse};
 
 use crate::AppState;
-use seajob_service::entry::JOB_DEFINE_SERVICE;
 use log::error;
 use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineRunRequest};
+use seajob_service::entry::JOB_DEFINE_SERVICE;
 use seajob_service::job_define::JobDefineService;
 
 // TODO: 获取所有投递计划
 #[get("/")]
-pub async fn all_job_define(_req: HttpRequest, _: web::Data<AppState>) -> Result<HttpResponse, Error> {
+pub async fn all_job_define(
+    _req: HttpRequest,
+    _: web::Data<AppState>,
+) -> Result<HttpResponse, Error> {
     let job_define_service = JOB_DEFINE_SERVICE.get().unwrap();
 
     match job_define_service.find_all().await {
@@ -27,12 +30,12 @@ pub async fn all_job_define(_req: HttpRequest, _: web::Data<AppState>) -> Result
 
 // TODO 创建投递计划
 #[post("/")]
-pub async fn create_job_define(json: web::Json<JobDefineCreateRequest>) -> Result<HttpResponse, Error> {
+pub async fn create_job_define(
+    json: web::Json<JobDefineCreateRequest>,
+) -> Result<HttpResponse, Error> {
     let req = json.into_inner();
     match JobDefineService::create(req).await {
-        Ok(_) => {
-            Ok(HttpResponse::Ok().json(ApiResponse::success(true)))
-        }
+        Ok(_) => Ok(HttpResponse::Ok().json(ApiResponse::success(true))),
         Err(e) => {
             error!("Failed to create job defines: {:?}", e);
             let error_response = ApiResponse::fail_with_error(ApiErr::SYSTEM);
@@ -43,7 +46,10 @@ pub async fn create_job_define(json: web::Json<JobDefineCreateRequest>) -> Resul
 
 // TODO 更新投递计划
 #[put("/")]
-pub async fn update_job_define(_req: HttpRequest, _: web::Data<AppState>) -> Result<HttpResponse, Error> {
+pub async fn update_job_define(
+    _req: HttpRequest,
+    _: web::Data<AppState>,
+) -> Result<HttpResponse, Error> {
     let response = ApiResponse::success("hello man");
 
     Ok(HttpResponse::Ok().json(response))
@@ -51,7 +57,10 @@ pub async fn update_job_define(_req: HttpRequest, _: web::Data<AppState>) -> Res
 
 // TODO 删除投递计划
 #[delete("/")]
-pub async fn delete_job_define(_req: HttpRequest, _: web::Data<AppState>) -> Result<HttpResponse, Error> {
+pub async fn delete_job_define(
+    _req: HttpRequest,
+    _: web::Data<AppState>,
+) -> Result<HttpResponse, Error> {
     let response = ApiResponse::success("hello man");
     Ok(HttpResponse::Ok().json(response))
 }

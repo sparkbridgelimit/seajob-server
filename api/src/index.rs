@@ -1,4 +1,4 @@
-use actix_web::{Error, get, HttpRequest, HttpResponse, web};
+use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 
 use seajob_common::response::ApiResponse;
 

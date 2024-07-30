@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use seajob_common::id_gen::id_generator::{GLOBAL_IDGEN};
+use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 
 fn benchmark_next_id(c: &mut Criterion) {
     let mut idgen = GLOBAL_IDGEN.lock().unwrap();

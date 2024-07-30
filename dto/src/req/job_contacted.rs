@@ -11,14 +11,23 @@ pub struct JobContactedLog {
     pub company: Option<String>,
     pub boss_name: Option<String>,
     pub address: Option<String>,
-    // #[validate(custom = "validate_salary_range")]
     pub salary_range: Option<[i8; 2]>,
 }
 
-// 自定义验证函数用于 salary_range
-// fn validate_salary_range(salary_range: &[i8; 2]) -> Result<(), ValidationError> {
-//     if salary_range[0] < 0 || salary_range[1] < 0 || salary_range[0] > salary_range[1] {
-//         return Err(ValidationError::new("invalid salary range"));
-//     }
-//     Ok(())
-// }
+#[derive(Debug, Validate, Deserialize)]
+pub struct JobContactedUser {
+    #[validate(range(min = 1, message = "user_id must be greater than 0"))]
+    pub user_id: i64,
+}
+
+#[derive(Debug, Validate, Deserialize)]
+pub struct JobContactedDefine {
+    #[validate(range(min = 1, message = "job_define_id must be greater than 0"))]
+    pub job_define_id: i64,
+}
+
+#[derive(Debug, Validate, Deserialize)]
+pub struct JobContactedTaskReq {
+    #[validate(range(min = 1, message = "job_define_id must be greater than 0"))]
+    pub job_task_id: i64,
+}

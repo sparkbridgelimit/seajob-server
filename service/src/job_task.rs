@@ -1,11 +1,11 @@
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter};
 use sea_orm::ActiveValue::Set;
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter};
 
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use seajob_dto::req::job_task::{JobTaskEnd, JobTaskError, JobTaskList, JobTaskLog, JobTaskStart};
-use seajob_entity::{job_contacted, job_task};
 use seajob_entity::prelude::JobTask;
+use seajob_entity::{job_contacted, job_task};
 
 use crate::err::ServiceError;
 
@@ -22,7 +22,9 @@ impl JobTaskService {
             .map_err(ServiceError::DbError)?;
 
         if task_list.is_empty() {
-            return Err(ServiceError::NotFoundError("job task is not found".to_string()));
+            return Err(ServiceError::NotFoundError(
+                "job task is not found".to_string(),
+            ));
         }
 
         Ok(task_list)
@@ -35,7 +37,9 @@ impl JobTaskService {
             .filter(job_task::Column::Id.eq(req.job_task_id))
             .one(txn)
             .await?
-            .ok_or(ServiceError::NotFoundError("Job task not found".to_string()))?;
+            .ok_or(ServiceError::NotFoundError(
+                "Job task not found".to_string(),
+            ))?;
 
         // 改成开始状态
         let mut to_update = job_task.into_active_model();
@@ -54,10 +58,9 @@ impl JobTaskService {
 
         let txn = db::conn();
 
-        let job_task = JobTask::find_by_id(req.job_task_id)
-            .one(txn)
-            .await?
-            .ok_or(ServiceError::NotFoundError("job_task not found".to_string()))?;
+        let job_task = JobTask::find_by_id(req.job_task_id).one(txn).await?.ok_or(
+            ServiceError::NotFoundError("job_task not found".to_string()),
+        )?;
 
         job_contacted::ActiveModel {
             id: Set(id),
@@ -74,8 +77,8 @@ impl JobTaskService {
             create_time: Default::default(),
             update_time: Default::default(),
         }
-            .insert(txn)
-            .await?;
+        .insert(txn)
+        .await?;
 
         Ok(())
     }
@@ -83,10 +86,9 @@ impl JobTaskService {
     pub async fn error(req: JobTaskError) -> Result<(), ServiceError> {
         let txn = db::conn();
 
-        let job_task = JobTask::find_by_id(req.job_task_id)
-            .one(txn)
-            .await?
-            .ok_or(ServiceError::NotFoundError("job_task not found".to_string()))?;
+        let job_task = JobTask::find_by_id(req.job_task_id).one(txn).await?.ok_or(
+            ServiceError::NotFoundError("job_task not found".to_string()),
+        )?;
 
         // 改成错误状态
         let mut to_update = job_task.into_active_model();
@@ -101,10 +103,9 @@ impl JobTaskService {
     pub async fn end(req: JobTaskEnd) -> Result<(), ServiceError> {
         let txn = db::conn();
 
-        let job_task = JobTask::find_by_id(req.job_task_id)
-            .one(txn)
-            .await?
-            .ok_or(ServiceError::NotFoundError("job_task not found".to_string()))?;
+        let job_task = JobTask::find_by_id(req.job_task_id).one(txn).await?.ok_or(
+            ServiceError::NotFoundError("job_task not found".to_string()),
+        )?;
 
         // 改成开始状态
         let mut to_update = job_task.into_active_model();

@@ -18,16 +18,16 @@ pub struct JobTaskLog {
     pub company: Option<String>,
     pub boss_name: Option<String>,
     pub address: Option<String>,
-    pub salary_range: Option<[i8; 2]>
+    pub salary_range: Option<[i8; 2]>,
 }
 
 #[derive(Deserialize)]
 pub struct JobTaskError {
     pub job_task_id: i64,
-    pub error: Option<String>
+    pub error: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct JobTaskEnd {
-    pub job_task_id: i64
+    pub job_task_id: i64,
 }

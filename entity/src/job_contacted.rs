@@ -1,12 +1,14 @@
-use sea_orm::entity::prelude::*;
 use chrono::{DateTime, Utc};
-use sea_orm::ActiveValue::Set;
+use sea_orm::entity::prelude::*;
 use sea_orm::prelude::async_trait::async_trait;
+use sea_orm::ActiveValue::Set;
+use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use serde::Serialize;
-use strum_macros::{EnumString, Display};
-use seajob_common::id_gen::id_generator::{GLOBAL_IDGEN};
+use strum_macros::{Display, EnumString};
 
-#[derive(Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum, EnumString, Display, Serialize)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum, EnumString, Display, Serialize,
+)]
 #[sea_orm(rs_type = "String", db_type = "String(Some(16))")]
 pub enum Status {
     #[sea_orm(string_value = "unread")]
@@ -41,11 +43,9 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}
 
-
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
     fn new() -> Self {
-
         let id = {
             let id_gen = GLOBAL_IDGEN.lock().unwrap();
             id_gen.next_id().unwrap()

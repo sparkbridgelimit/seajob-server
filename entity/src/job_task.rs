@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
-use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::async_trait::async_trait;
-use serde::Serialize;
+use sea_orm::ActiveValue::Set;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
+use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "job_task")]

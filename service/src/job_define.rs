@@ -1,5 +1,5 @@
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, TransactionTrait};
 use sea_orm::ActiveValue::Set;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, TransactionTrait};
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineRunRequest};
@@ -20,7 +20,10 @@ impl JobDefineService {
         }
     }
 
-    pub async fn find_by_id(&self, id: i64) -> Result<Option<<JobDefine as EntityTrait>::Model>, DbErr> {
+    pub async fn find_by_id(
+        &self,
+        id: i64,
+    ) -> Result<Option<<JobDefine as EntityTrait>::Model>, DbErr> {
         self.crud.find_by_id(id).await
     }
 
@@ -35,49 +38,52 @@ impl JobDefineService {
             let id_gen = GLOBAL_IDGEN.lock().unwrap();
             id_gen.next_id().unwrap()
         };
-        db::conn().transaction::<_, _, ServiceError>(|txn| {
-            Box::pin(async move {
-                // 插入用户
-                job_define::ActiveModel {
-                    id: Set(job_define_id),
-                    user_id: Set(1),
-                    job_define_name: Set(req.job_define_name.unwrap()),
-                    job_define_desc: Set(req.job_define_desc.unwrap()),
-                    create_time: Default::default(),
-                    update_time: Default::default(),
-                }
+        db::conn()
+            .transaction::<_, _, ServiceError>(|txn| {
+                Box::pin(async move {
+                    // 插入用户
+                    job_define::ActiveModel {
+                        id: Set(job_define_id),
+                        user_id: Set(1),
+                        job_define_name: Set(req.job_define_name.unwrap()),
+                        job_define_desc: Set(req.job_define_desc.unwrap()),
+                        create_time: Default::default(),
+                        update_time: Default::default(),
+                    }
                     .insert(txn)
                     .await?;
 
-                // 创建 job_prefer
-                job_prefer::ActiveModel {
-                    job_define_id: Set(job_define_id),
-                    keyword: Set(req.keyword.unwrap_or_default()),
-                    city_code: Set(req.city_code.unwrap_or_default()),
-                    // 转["1", "1"]
-                    salary_range: Set(serde_json::to_string(&req.salary_range).unwrap()),
-                    // 转[""]
-                    key_kills: Set(serde_json::to_string(&req.salary_range).unwrap()),
-                    exclude_company: Set(serde_json::to_string(&req.exclude_company).unwrap()),
-                    exclude_job: Set(serde_json::to_string(&req.exclude_job).unwrap()),
-                    // 填充字段
-                    ..Default::default()
-                }
+                    // 创建 job_prefer
+                    job_prefer::ActiveModel {
+                        job_define_id: Set(job_define_id),
+                        keyword: Set(req.keyword.unwrap_or_default()),
+                        city_code: Set(req.city_code.unwrap_or_default()),
+                        // 转["1", "1"]
+                        salary_range: Set(serde_json::to_string(&req.salary_range).unwrap()),
+                        // 转[""]
+                        key_kills: Set(serde_json::to_string(&req.salary_range).unwrap()),
+                        exclude_company: Set(serde_json::to_string(&req.exclude_company).unwrap()),
+                        exclude_job: Set(serde_json::to_string(&req.exclude_job).unwrap()),
+                        // 填充字段
+                        ..Default::default()
+                    }
                     .insert(txn)
                     .await?;
 
-                // 创建 job_param
-                job_param::ActiveModel {
-                    job_define_id: Set(job_define_id),
-                    greet_num: Set(req.greet_num),
-                    ..Default::default()
-                }
+                    // 创建 job_param
+                    job_param::ActiveModel {
+                        job_define_id: Set(job_define_id),
+                        greet_num: Set(req.greet_num),
+                        ..Default::default()
+                    }
                     .insert(txn)
                     .await?;
 
-                Ok(true)
+                    Ok(true)
+                })
             })
-        }).await.map_err(|e| ServiceError::TransactionError(Box::new(e)))?;
+            .await
+            .map_err(|e| ServiceError::TransactionError(Box::new(e)))?;
 
         Ok(true)
     }
@@ -96,7 +102,9 @@ impl JobDefineService {
             .filter(job_param::Column::JobDefineId.eq(req.job_define_id))
             .one(&txn)
             .await?
-            .ok_or(ServiceError::ValidationError("Job parameter not found".to_string()))?;
+            .ok_or(ServiceError::ValidationError(
+                "Job parameter not found".to_string(),
+            ))?;
 
         // 插入新的 job_task 记录
         let new_job_task = job_task::ActiveModel {

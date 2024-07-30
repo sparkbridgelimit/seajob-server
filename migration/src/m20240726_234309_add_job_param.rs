@@ -1,5 +1,5 @@
-use sea_orm_migration::prelude::*;
 use crate::sea_orm::{DbBackend, Statement};
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -19,10 +19,12 @@ impl MigrationTrait for Migration {
             );
         ";
 
-        manager.get_connection().execute(Statement::from_string(
-            DbBackend::Postgres,
-            create_table_sql.to_string(),
-        ))
+        manager
+            .get_connection()
+            .execute(Statement::from_string(
+                DbBackend::Postgres,
+                create_table_sql.to_string(),
+            ))
             .await?;
 
         // 添加注释的 SQL 语句数组
@@ -38,12 +40,14 @@ impl MigrationTrait for Migration {
 
         // 逐个执行添加注释的 SQL 语句
         for comment_sql in &comment_sql {
-            manager.get_connection().execute(Statement::from_string(
-                DbBackend::Postgres,
-                comment_sql.to_string(),
-            )).await?;
+            manager
+                .get_connection()
+                .execute(Statement::from_string(
+                    DbBackend::Postgres,
+                    comment_sql.to_string(),
+                ))
+                .await?;
         }
-
 
         // 创建索引的原生 SQL
         let create_index_sql = "
@@ -52,10 +56,12 @@ impl MigrationTrait for Migration {
         ";
 
         // 执行创建索引的原生 SQL
-        manager.get_connection().execute(Statement::from_string(
-            DbBackend::Postgres,
-            create_index_sql.to_string(),
-        ))
+        manager
+            .get_connection()
+            .execute(Statement::from_string(
+                DbBackend::Postgres,
+                create_index_sql.to_string(),
+            ))
             .await?;
 
         Ok(())
@@ -65,4 +71,3 @@ impl MigrationTrait for Migration {
         Ok(())
     }
 }
-

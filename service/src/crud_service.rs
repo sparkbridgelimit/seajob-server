@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use sea_orm::{DbErr, EntityTrait, PrimaryKeyTrait};
 use sea_orm::entity::prelude::*;
+use sea_orm::{DbErr, EntityTrait, PrimaryKeyTrait};
 use seajob_common::db;
 
 #[async_trait]
@@ -10,7 +10,10 @@ where
     E::Model: Send + Sync,
     <E::PrimaryKey as PrimaryKeyTrait>::ValueType: Send + Sync,
 {
-    async fn find_by_id(&self, id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType) -> Result<Option<E::Model>, DbErr>;
+    async fn find_by_id(
+        &self,
+        id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
+    ) -> Result<Option<E::Model>, DbErr>;
     async fn find_all(&self) -> Result<Vec<E::Model>, DbErr>;
 }
 
@@ -43,7 +46,10 @@ where
     E::Model: Send + Sync,
     <E::PrimaryKey as PrimaryKeyTrait>::ValueType: Send + Sync,
 {
-    async fn find_by_id(&self, id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType) -> Result<Option<E::Model>, DbErr> {
+    async fn find_by_id(
+        &self,
+        id: <E::PrimaryKey as PrimaryKeyTrait>::ValueType,
+    ) -> Result<Option<E::Model>, DbErr> {
         E::find_by_id(id).one(db::conn()).await
     }
 

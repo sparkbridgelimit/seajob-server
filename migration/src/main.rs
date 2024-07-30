@@ -5,7 +5,6 @@ use migration::sea_orm::Database;
 
 #[async_std::main]
 async fn main() -> Result<(), DbErr> {
-
     // 初始化 env_logger
     env_logger::Builder::from_default_env()
         .filter_level(LevelFilter::Info)

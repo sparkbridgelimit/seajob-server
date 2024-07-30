@@ -1,5 +1,5 @@
-use thiserror::Error;
 use sea_orm::{DbErr, TransactionError};
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ServiceError {

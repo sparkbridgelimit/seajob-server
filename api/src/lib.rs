@@ -1,14 +1,14 @@
-mod router;
 mod index;
-mod job_define;
 mod job_contacted;
+mod job_define;
 mod job_task;
+mod router;
 
 use std::env;
 
-use actix_web::{App, HttpServer, middleware, web};
-use listenfd::ListenFd;
+use actix_web::{middleware, web, App, HttpServer};
 use env_logger::Env;
+use listenfd::ListenFd;
 use seajob_common::db;
 use seajob_service::entry::init_services;
 

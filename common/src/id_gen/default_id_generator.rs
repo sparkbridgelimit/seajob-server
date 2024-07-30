@@ -1,6 +1,6 @@
+use crate::id_gen::id_generator_options::IdGeneratorOptions;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::id_gen::id_generator_options::IdGeneratorOptions;
 
 pub struct Snowflake {
     options: IdGeneratorOptions,
@@ -54,7 +54,8 @@ impl Snowflake {
 
         self.last_timestamp = timestamp;
 
-        let id = ((timestamp - self.options.base_time) << (self.options.worker_id_bit_length + self.options.seq_bit_length))
+        let id = ((timestamp - self.options.base_time)
+            << (self.options.worker_id_bit_length + self.options.seq_bit_length))
             | (self.options.worker_id << self.options.seq_bit_length)
             | self.sequence;
 

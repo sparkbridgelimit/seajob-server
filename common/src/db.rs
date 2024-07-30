@@ -1,7 +1,7 @@
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use std::env;
 use std::sync::OnceLock;
 use std::time::Duration;
-use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 
 static DB: OnceLock<DatabaseConnection> = OnceLock::new();
 
@@ -20,7 +20,10 @@ pub async fn init_db() {
         .await
         .unwrap_or_else(|e| panic!("数据库连接失败：{}", e));
 
-    let _ = conn.ping().await.is_err_and(|e| panic!("数据库连接失败：{}", e));
+    let _ = conn
+        .ping()
+        .await
+        .is_err_and(|e| panic!("数据库连接失败：{}", e));
     let _ = DB.set(conn);
 }
 
