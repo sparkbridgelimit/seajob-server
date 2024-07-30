@@ -32,7 +32,7 @@ impl JobTaskService {
         let txn = db::conn();
 
         let job_task = JobTask::find()
-            .filter(job_task::Column::JobDefineId.eq(req.job_define_id))
+            .filter(job_task::Column::Id.eq(req.job_task_id))
             .one(txn)
             .await?
             .ok_or(ServiceError::NotFoundError("Job task not found".to_string()))?;
@@ -83,7 +83,7 @@ impl JobTaskService {
     pub async fn error(req: JobTaskError) -> Result<(), ServiceError> {
         let txn = db::conn();
 
-        let job_task = JobTask::find_by_id(req.id)
+        let job_task = JobTask::find_by_id(req.job_task_id)
             .one(txn)
             .await?
             .ok_or(ServiceError::NotFoundError("job_task not found".to_string()))?;
@@ -91,7 +91,7 @@ impl JobTaskService {
         // 改成错误状态
         let mut to_update = job_task.into_active_model();
         to_update.status = Set("error".to_string());
-        to_update.last_error = Set(req.error.unwrap_or_default());
+        to_update.last_error = Set(req.error);
 
         to_update.save(txn).await?;
 
@@ -101,7 +101,7 @@ impl JobTaskService {
     pub async fn end(req: JobTaskEnd) -> Result<(), ServiceError> {
         let txn = db::conn();
 
-        let job_task = JobTask::find_by_id(req.id)
+        let job_task = JobTask::find_by_id(req.job_task_id)
             .one(txn)
             .await?
             .ok_or(ServiceError::NotFoundError("job_task not found".to_string()))?;

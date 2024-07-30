@@ -7,7 +7,7 @@ pub struct JobTaskList {
 
 #[derive(Deserialize)]
 pub struct JobTaskStart {
-    pub job_define_id: i64,
+    pub job_task_id: i64,
 }
 
 #[derive(Deserialize)]
@@ -23,11 +23,11 @@ pub struct JobTaskLog {
 
 #[derive(Deserialize)]
 pub struct JobTaskError {
-    pub id: i64,
+    pub job_task_id: i64,
     pub error: Option<String>
 }
 
 #[derive(Deserialize)]
 pub struct JobTaskEnd {
-    pub id: i64
+    pub job_task_id: i64
 }

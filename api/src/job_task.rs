@@ -18,11 +18,12 @@ pub async fn list(req: web::Json<JobTaskList>) -> Result<HttpResponse, Error> {
         }
     }
 }
-#[post("/log")]
-pub async fn log_task(req: web::Json<JobTaskLog>) -> Result<HttpResponse, Error> {
-    match JobTaskService::log(req.into_inner()).await {
+
+#[post("/start")]
+pub async fn start(req: web::Json<JobTaskStart>) -> Result<HttpResponse, Error> {
+    match JobTaskService::start(req.into_inner()).await {
         Ok(()) => {
-            Ok(HttpResponse::Ok().json(true))
+            Ok(HttpResponse::Ok().json(ApiResponse::success(true)))
         }
         Err(e) => {
             error!("Failed to log job task: {:?}", e);
@@ -32,11 +33,11 @@ pub async fn log_task(req: web::Json<JobTaskLog>) -> Result<HttpResponse, Error>
     }
 }
 
-#[post("/start")]
-pub async fn start(req: web::Json<JobTaskStart>) -> Result<HttpResponse, Error> {
-    match JobTaskService::start(req.into_inner()).await {
+#[post("/log")]
+pub async fn log_task(req: web::Json<JobTaskLog>) -> Result<HttpResponse, Error> {
+    match JobTaskService::log(req.into_inner()).await {
         Ok(()) => {
-            Ok(HttpResponse::Ok().json(true))
+            Ok(HttpResponse::Ok().json(ApiResponse::success(true)))
         }
         Err(e) => {
             error!("Failed to log job task: {:?}", e);
@@ -50,7 +51,7 @@ pub async fn start(req: web::Json<JobTaskStart>) -> Result<HttpResponse, Error> 
 pub async fn error(req: web::Json<JobTaskError>) -> Result<HttpResponse, Error> {
     match JobTaskService::error(req.into_inner()).await {
         Ok(()) => {
-            Ok(HttpResponse::Ok().json(true))
+            Ok(HttpResponse::Ok().json(ApiResponse::success(true)))
         }
         Err(e) => {
             error!("Failed to log job task: {:?}", e);
@@ -64,7 +65,7 @@ pub async fn error(req: web::Json<JobTaskError>) -> Result<HttpResponse, Error> 
 pub async fn end(req: web::Json<JobTaskEnd>) -> Result<HttpResponse, Error> {
     match JobTaskService::end(req.into_inner()).await {
         Ok(()) => {
-            Ok(HttpResponse::Ok().json(true))
+            Ok(HttpResponse::Ok().json(ApiResponse::success(true)))
         }
         Err(e) => {
             error!("Failed to log job task: {:?}", e);

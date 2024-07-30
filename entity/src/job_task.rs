@@ -27,7 +27,7 @@ pub struct Model {
     pub done_num: i32,
 
     #[sea_orm(comment = "错误")]
-    pub last_error: String,
+    pub last_error: Option<String>,
 
     #[sea_orm(comment = "创建时间")]
     pub create_time: Option<DateTime<Utc>>,
