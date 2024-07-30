@@ -51,7 +51,7 @@ pub enum ApiErr {
     SYSTEM,
     NotFound,
     UNAUTHORIZED,
-    // Add other error types as needed
+    ValidationErrors
 }
 
 impl ApiErr {
@@ -60,6 +60,7 @@ impl ApiErr {
             ApiErr::SYSTEM => 1000,
             ApiErr::NotFound => 1001,
             ApiErr::UNAUTHORIZED => 1002,
+            ApiErr::ValidationErrors => 1003
             // Add other error codes as needed
         }
     }
@@ -69,6 +70,7 @@ impl ApiErr {
             ApiErr::SYSTEM => "系统异常",
             ApiErr::NotFound => "未找到资源",
             ApiErr::UNAUTHORIZED => "未授权",
+            ApiErr::ValidationErrors => "参数校验未通过",
         }
     }
 }

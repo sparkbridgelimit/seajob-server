@@ -3,19 +3,22 @@ use seajob_common::response::{ApiErr, ApiResponse};
 
 use crate::AppState;
 use log::error;
-use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineRunRequest};
-use seajob_service::entry::JOB_DEFINE_SERVICE;
+use seajob_dto::req::job_define::{
+    JobDefineCreateRequest, JobDefineRunRequest, JobDefineUserAllRequest,
+};
 use seajob_service::job_define::JobDefineService;
+use validator::{Validate};
 
-// TODO: 获取所有投递计划
+// DONE: 获取用户的所有投递计划
 #[get("/")]
 pub async fn all_job_define(
-    _req: HttpRequest,
-    _: web::Data<AppState>,
+    req: web::Json<JobDefineUserAllRequest>,
 ) -> Result<HttpResponse, Error> {
-    let job_define_service = JOB_DEFINE_SERVICE.get().unwrap();
-
-    match job_define_service.find_all().await {
+    if let Err(e) = req.validate() {
+        error!("Validation error: {}", e.to_string());
+        return Ok(HttpResponse::Ok().json(ApiResponse::fail_with_error(ApiErr::ValidationErrors)));
+    }
+    match JobDefineService::find_all_by_user(req.into_inner()).await {
         Ok(job_define_res) => {
             let response = ApiResponse::success(job_define_res);
             Ok(HttpResponse::Ok().json(response))
@@ -29,7 +32,7 @@ pub async fn all_job_define(
 }
 
 // TODO 创建投递计划
-#[post("/")]
+#[post("/create")]
 pub async fn create_job_define(
     json: web::Json<JobDefineCreateRequest>,
 ) -> Result<HttpResponse, Error> {

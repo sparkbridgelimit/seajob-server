@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use validator_derive::Validate;
 
 #[derive(Deserialize)]
 pub struct JobDefineCreateRequest {
@@ -35,4 +36,10 @@ pub struct JobDefineUpdateRequest {
 pub struct JobDefineRunRequest {
     pub job_define_id: Option<i64>,
     pub target_num: Option<i32>,
+}
+
+#[derive(Debug, Validate, Deserialize)]
+pub struct JobDefineUserAllRequest {
+    #[validate(range(min = 1, message = "user_id must be greater than 0"))]
+    pub user_id: i64,
 }

@@ -1,11 +1,11 @@
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, TransactionTrait};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, QuerySelect, TransactionTrait};
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
-use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineRunRequest};
+use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineRunRequest, JobDefineUserAllRequest};
 use seajob_entity::prelude::{JobDefine, JobParam};
 use seajob_entity::{job_define, job_param, job_prefer, job_task};
-
+use seajob_entity::job_define::Model;
 use crate::crud_service::{CRUDService, CRUDServiceImpl};
 use crate::err::ServiceError;
 
@@ -33,6 +33,20 @@ impl JobDefineService {
 }
 
 impl JobDefineService {
+    pub async fn find_all_by_user(req: JobDefineUserAllRequest) -> Result<Vec<Model>, ServiceError> {
+        let list = JobDefine::find()
+            // .select_only()
+            // .column(job_define::Column::Id)
+            // .column(job_define::Column::UserId)
+            // .column(job_define::Column::JobDefineName)
+            // .column(job_define::Column::JobDefineDesc)
+            .filter(job_define::Column::UserId.eq(req.user_id))
+            .all(db::conn())
+            .await?;
+
+        Ok(list)
+    }
+
     pub async fn create(req: JobDefineCreateRequest) -> Result<bool, ServiceError> {
         let job_define_id = {
             let id_gen = GLOBAL_IDGEN.lock().unwrap();
@@ -44,14 +58,14 @@ impl JobDefineService {
                     // 插入用户
                     job_define::ActiveModel {
                         id: Set(job_define_id),
-                        user_id: Set(1),
+                        user_id: Set(req.user_id.unwrap()),
                         job_define_name: Set(req.job_define_name.unwrap()),
                         job_define_desc: Set(req.job_define_desc.unwrap()),
                         create_time: Default::default(),
                         update_time: Default::default(),
                     }
-                    .insert(txn)
-                    .await?;
+                        .insert(txn)
+                        .await?;
 
                     // 创建 job_prefer
                     job_prefer::ActiveModel {
@@ -67,8 +81,8 @@ impl JobDefineService {
                         // 填充字段
                         ..Default::default()
                     }
-                    .insert(txn)
-                    .await?;
+                        .insert(txn)
+                        .await?;
 
                     // 创建 job_param
                     job_param::ActiveModel {
@@ -76,8 +90,8 @@ impl JobDefineService {
                         greet_num: Set(req.greet_num),
                         ..Default::default()
                     }
-                    .insert(txn)
-                    .await?;
+                        .insert(txn)
+                        .await?;
 
                     Ok(true)
                 })
