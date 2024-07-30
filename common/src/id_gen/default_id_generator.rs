@@ -1,6 +1,7 @@
-use crate::id_gen::id_generator_options::IdGeneratorOptions;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use crate::id_gen::id_generator_options::IdGeneratorOptions;
 
 pub struct Snowflake {
     options: IdGeneratorOptions,

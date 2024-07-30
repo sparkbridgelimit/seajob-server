@@ -1,7 +1,8 @@
-use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use std::env;
 use std::sync::OnceLock;
 use std::time::Duration;
+
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 
 static DB: OnceLock<DatabaseConnection> = OnceLock::new();
 

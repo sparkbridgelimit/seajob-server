@@ -2,8 +2,9 @@ use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
 use sea_orm::prelude::async_trait::async_trait;
 use sea_orm::ActiveValue::Set;
-use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use serde::Serialize;
+
+use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "job_param")]
@@ -22,6 +23,9 @@ pub struct Model {
 
     #[sea_orm(comment = "单次沟通数")]
     pub greet_num: Option<i32>,
+
+    #[sea_orm(comment = "wt2_cookie")]
+    pub wt2_cookie: Option<String>,
 
     #[sea_orm(comment = "创建时间")]
     pub create_time: Option<DateTime<Utc>>,

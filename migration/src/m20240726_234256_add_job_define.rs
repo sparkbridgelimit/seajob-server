@@ -1,5 +1,6 @@
-use crate::sea_orm::{DbBackend, Statement};
 use sea_orm_migration::prelude::*;
+
+use crate::sea_orm::{DbBackend, Statement};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;

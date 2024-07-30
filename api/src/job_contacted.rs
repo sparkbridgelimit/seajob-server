@@ -1,5 +1,6 @@
 use actix_web::{get, web, Error, HttpResponse};
 use log::error;
+
 use seajob_common::response::ApiResponse;
 use seajob_dto::req::job_contacted::{JobContactedDefine, JobContactedTaskReq, JobContactedUser};
 use seajob_service::job_contacted::JobContactedService;

@@ -1,5 +1,6 @@
-use crate::{index, job_contacted, job_define, job_task};
 use actix_web::web;
+
+use crate::{index, job_contacted, job_define, job_task};
 
 fn index_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(index::index);
@@ -15,6 +16,7 @@ fn job_contacted_routes(cfg: &mut web::ServiceConfig) {
 // 投递计划模块
 fn job_define_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(job_define::all_job_define)
+        .service(job_define::query_detail)
         .service(job_define::create_job_define)
         .service(job_define::update_job_define)
         .service(job_define::delete_job_define)
@@ -36,6 +38,6 @@ pub fn entry(cfg: &mut web::ServiceConfig) {
             .service(web::scope("/").configure(index_routes))
             .service(web::scope("/job_define").configure(job_define_routes))
             .service(web::scope("/job_contacted").configure(job_contacted_routes))
-            .service(web::scope("/job_task").configure(job_task))
+            .service(web::scope("/job_task").configure(job_task)),
     );
 }

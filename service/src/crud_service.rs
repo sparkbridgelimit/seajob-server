@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use sea_orm::entity::prelude::*;
 use sea_orm::{DbErr, EntityTrait, PrimaryKeyTrait};
+
 use seajob_common::db;
 
 #[async_trait]

@@ -1,6 +1,7 @@
+use std::sync::{LazyLock, Mutex};
+
 use crate::id_gen::default_id_generator::DefaultIdGenerator;
 use crate::id_gen::id_generator_options::IdGeneratorOptions;
-use std::sync::{LazyLock, Mutex};
 
 pub static GLOBAL_IDGEN: LazyLock<Mutex<IDGenerator>> =
     LazyLock::new(|| Mutex::new(IDGenerator::new()));

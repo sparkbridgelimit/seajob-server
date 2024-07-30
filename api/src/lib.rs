@@ -1,16 +1,19 @@
-mod index;
-mod job_contacted;
-mod job_define;
-mod job_task;
-mod router;
-
 use std::env;
 
+use actix_cors::Cors;
 use actix_web::{middleware, web, App, HttpServer};
 use env_logger::Env;
 use listenfd::ListenFd;
+
 use seajob_common::db;
 use seajob_service::entry::init_services;
+
+mod index;
+mod job_contacted;
+mod job_define;
+mod job_param;
+mod job_task;
+mod router;
 
 #[derive(Debug, Clone)]
 struct AppState {}
@@ -32,6 +35,18 @@ pub async fn start() -> std::io::Result<()> {
     // actix-web实例
     let mut server = HttpServer::new(move || {
         App::new()
+            .wrap(
+                Cors::default()
+                    .allowed_origin_fn(|_origin, _req_head| true) // 支持任何来源
+                    .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+                    .allowed_headers(vec![
+                        actix_web::http::header::AUTHORIZATION,
+                        actix_web::http::header::ACCEPT,
+                    ])
+                    .allowed_header(actix_web::http::header::CONTENT_TYPE)
+                    .supports_credentials()
+                    .max_age(3600),
+            )
             .app_data(web::Data::new(state.clone()))
             .wrap(middleware::Logger::default()) // enable logger
             .configure(router::entry)

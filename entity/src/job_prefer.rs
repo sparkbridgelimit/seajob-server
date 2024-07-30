@@ -2,9 +2,10 @@ use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
 use sea_orm::prelude::async_trait::async_trait;
 use sea_orm::ActiveValue::Set;
-use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use serde::Serialize;
 use strum_macros::{Display, EnumString};
+
+use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 
 #[derive(
     Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum, EnumString, Display, Serialize,

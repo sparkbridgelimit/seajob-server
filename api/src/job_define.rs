@@ -1,24 +1,27 @@
 use actix_web::{delete, get, post, put, web, Error, HttpRequest, HttpResponse};
-use seajob_common::response::{ApiErr, ApiResponse};
-
-use crate::AppState;
 use log::error;
+
+use seajob_common::response::{ApiErr, ApiResponse};
 use seajob_dto::req::job_define::{
-    JobDefineCreateRequest, JobDefineRunRequest, JobDefineUserAllRequest,
+    JobDefineCreateRequest, JobDefineDetailRequest, JobDefineRunRequest,
 };
 use seajob_service::job_define::JobDefineService;
-use validator::{Validate};
+
+use crate::AppState;
 
 // DONE: 获取用户的所有投递计划
-#[get("/")]
-pub async fn all_job_define(
-    req: web::Json<JobDefineUserAllRequest>,
-) -> Result<HttpResponse, Error> {
-    if let Err(e) = req.validate() {
-        error!("Validation error: {}", e.to_string());
-        return Ok(HttpResponse::Ok().json(ApiResponse::fail_with_error(ApiErr::ValidationErrors)));
-    }
-    match JobDefineService::find_all_by_user(req.into_inner()).await {
+#[get("/user/{user_id}")]
+pub async fn all_job_define(user_id: web::Path<String>) -> Result<HttpResponse, Error> {
+    let user_id: i64 = match user_id.parse::<i64>() {
+        Ok(id) => id,
+        Err(_) => {
+            error!("Validation error: user_id must be a valid i64");
+            return Ok(
+                HttpResponse::Ok().json(ApiResponse::fail_with_error(ApiErr::ValidationErrors))
+            );
+        }
+    };
+    match JobDefineService::find_all_by_user(user_id).await {
         Ok(job_define_res) => {
             let response = ApiResponse::success(job_define_res);
             Ok(HttpResponse::Ok().json(response))
@@ -31,7 +34,7 @@ pub async fn all_job_define(
     }
 }
 
-// TODO 创建投递计划
+// DONE 创建投递计划
 #[post("/create")]
 pub async fn create_job_define(
     json: web::Json<JobDefineCreateRequest>,
@@ -39,6 +42,19 @@ pub async fn create_job_define(
     let req = json.into_inner();
     match JobDefineService::create(req).await {
         Ok(_) => Ok(HttpResponse::Ok().json(ApiResponse::success(true))),
+        Err(e) => {
+            error!("Failed to create job defines: {:?}", e);
+            let error_response = ApiResponse::fail_with_error(ApiErr::SYSTEM);
+            Ok(HttpResponse::InternalServerError().json(error_response))
+        }
+    }
+}
+
+#[post("/detail")]
+pub async fn query_detail(req: web::Json<JobDefineDetailRequest>) -> Result<HttpResponse, Error> {
+    let req = req.into_inner();
+    match JobDefineService::detail(req).await {
+        Ok(res) => Ok(HttpResponse::Ok().json(ApiResponse::success(res))),
         Err(e) => {
             error!("Failed to create job defines: {:?}", e);
             let error_response = ApiResponse::fail_with_error(ApiErr::SYSTEM);

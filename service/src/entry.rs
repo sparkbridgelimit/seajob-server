@@ -1,5 +1,6 @@
-use crate::job_define::JobDefineService;
 use std::sync::OnceLock;
+
+use crate::job_define::JobDefineService;
 
 pub static JOB_DEFINE_SERVICE: OnceLock<JobDefineService> = OnceLock::new();
 

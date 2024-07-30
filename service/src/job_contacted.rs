@@ -1,9 +1,11 @@
-use crate::err::ServiceError;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+
 use seajob_common::db;
 use seajob_dto::req::job_contacted::{JobContactedDefine, JobContactedTaskReq, JobContactedUser};
 use seajob_entity::job_contacted::Model;
 use seajob_entity::prelude::JobContacted;
+
+use crate::err::ServiceError;
 
 pub struct JobContactedService;
 

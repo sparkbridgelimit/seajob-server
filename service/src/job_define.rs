@@ -1,11 +1,16 @@
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, TransactionTrait};
+
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
-use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineRunRequest, JobDefineUserAllRequest};
-use seajob_entity::prelude::{JobDefine, JobParam};
-use seajob_entity::{job_define, job_param, job_prefer, job_task};
+use seajob_dto::req::job_define::{
+    JobDefineCreateRequest, JobDefineDetailRequest, JobDefineRunRequest,
+};
+use seajob_dto::res::job_define::JobDefineDetailResponse;
 use seajob_entity::job_define::Model;
+use seajob_entity::prelude::{JobDefine, JobParam, JobPrefer};
+use seajob_entity::{job_define, job_param, job_prefer, job_task};
+
 use crate::crud_service::{CRUDService, CRUDServiceImpl};
 use crate::err::ServiceError;
 
@@ -33,14 +38,9 @@ impl JobDefineService {
 }
 
 impl JobDefineService {
-    pub async fn find_all_by_user(req: JobDefineUserAllRequest) -> Result<Vec<Model>, ServiceError> {
+    pub async fn find_all_by_user(user_id: i64) -> Result<Vec<Model>, ServiceError> {
         let list = JobDefine::find()
-            // .select_only()
-            // .column(job_define::Column::Id)
-            // .column(job_define::Column::UserId)
-            // .column(job_define::Column::JobDefineName)
-            // .column(job_define::Column::JobDefineDesc)
-            .filter(job_define::Column::UserId.eq(req.user_id))
+            .filter(job_define::Column::UserId.eq(user_id))
             .all(db::conn())
             .await?;
 
@@ -137,5 +137,50 @@ impl JobDefineService {
         // 提交事务
         txn.commit().await?;
         Ok(inserted_job_task)
+    }
+
+    pub async fn detail(
+        req: JobDefineDetailRequest,
+    ) -> Result<JobDefineDetailResponse, ServiceError> {
+        // 查询job_define
+        let jd = JobDefine::find()
+            .filter(job_define::Column::Id.eq(req.job_define_id))
+            .filter(job_define::Column::UserId.eq(req.user_id))
+            .one(db::conn())
+            .await?
+            .ok_or_else(|| ServiceError::NotFoundError("Job define not found".to_string()))?;
+
+        // 查询job_prefer
+        let jp = JobPrefer::find()
+            .filter(job_prefer::Column::JobDefineId.eq(req.job_define_id))
+            .one(db::conn())
+            .await?
+            .ok_or_else(|| ServiceError::NotFoundError("Job prefer not found".to_string()))?;
+
+        // 查询job_param
+        let jpa = JobParam::find()
+            .filter(job_param::Column::JobDefineId.eq(req.job_define_id))
+            .one(db::conn())
+            .await?
+            .ok_or_else(|| ServiceError::NotFoundError("Job param not found".to_string()))?;
+
+        // 返回一个复合DTO
+        let dto = JobDefineDetailResponse {
+            job_define_id: req.job_define_id,
+            job_define_name: jd.job_define_name,
+            job_define_desc: jd.job_define_desc,
+            keyword: jp.keyword,
+            city_code: jp.city_code,
+            salary_range: jp.salary_range,
+            key_kills: jp.key_kills,
+            exclude_company: jp.exclude_company,
+            exclude_job: jp.exclude_job,
+            interval: jpa.interval.unwrap_or_default(),
+            timeout: jpa.timeout.unwrap_or_default(),
+            greet_num: jpa.greet_num.unwrap_or_default(),
+            wt2_cookie: jpa.wt2_cookie.unwrap_or_default(),
+        };
+
+        Ok(dto)
     }
 }
