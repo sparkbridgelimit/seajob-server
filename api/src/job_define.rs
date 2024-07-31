@@ -1,10 +1,8 @@
-use actix_web::{delete, get, post, put, web, Error, HttpRequest, HttpResponse};
+use actix_web::{get, post, put, web, Error, HttpRequest, HttpResponse};
 use log::error;
 
 use seajob_common::response::{ApiErr, ApiResponse};
-use seajob_dto::req::job_define::{
-    JobDefineCreateRequest, JobDefineDetailRequest, JobDefineRunRequest,
-};
+use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest};
 use seajob_service::job_define::JobDefineService;
 
 use crate::AppState;
@@ -75,13 +73,22 @@ pub async fn update_job_define(
 }
 
 // TODO 删除投递计划
-#[delete("/")]
+#[post("/delete")]
 pub async fn delete_job_define(
-    _req: HttpRequest,
+    req: web::Json<JobDefineDelete>,
     _: web::Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    let response = ApiResponse::success("hello man");
-    Ok(HttpResponse::Ok().json(response))
+    match JobDefineService::delete(req.into_inner()).await {
+        Ok(data) => {
+            let response = ApiResponse::success(data);
+            Ok(HttpResponse::Ok().json(response))
+        }
+        Err(e) => {
+            error!("Failed to create job defines: {:?}", e);
+            let error_response = ApiResponse::fail();
+            Ok(HttpResponse::Ok().json(error_response))
+        }
+    }
 }
 
 #[post("/run")]

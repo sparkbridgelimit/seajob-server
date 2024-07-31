@@ -1,11 +1,9 @@
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, TransactionTrait};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, QueryFilter, QuerySelect, TransactionTrait};
 
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
-use seajob_dto::req::job_define::{
-    JobDefineCreateRequest, JobDefineDetailRequest, JobDefineRunRequest,
-};
+use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest};
 use seajob_dto::res::job_define::JobDefineDetailResponse;
 use seajob_entity::job_define::Model;
 use seajob_entity::prelude::{JobDefine, JobParam, JobPrefer};
@@ -182,5 +180,38 @@ impl JobDefineService {
         };
 
         Ok(dto)
+    }
+
+    pub async fn delete(req: JobDefineDelete) -> Result<bool, ServiceError> {
+        db::conn()
+            .transaction::<_, _, ServiceError>(|txn| {
+                Box::pin(async move {
+                    JobDefine::delete_by_id(req.job_define_id).exec(txn).await?;
+
+                    let jpa = JobParam::find()
+                        .select_only()
+                        .column(job_param::Column::Id)
+                        .filter(job_param::Column::JobDefineId.eq(req.job_define_id))
+                        .one(txn)
+                        .await?
+                        .ok_or_else(|| ServiceError::NotFoundError("Job param not found".to_string()))?;
+
+                    jpa.delete(db::conn()).await?;
+
+                    let jp = JobPrefer::find()
+                        .select_only()
+                        .column(job_prefer::Column::Id)
+                        .filter(job_prefer::Column::JobDefineId.eq(req.job_define_id))
+                        .one(txn)
+                        .await?
+                        .ok_or_else(|| ServiceError::NotFoundError("Job prefer not found".to_string()))?;
+
+                    jp.delete(db::conn()).await?;
+                    Ok(true)
+                })
+            })
+            .await
+            .map_err(|e| ServiceError::TransactionError(Box::new(e)))?;
+        Ok(true)
     }
 }

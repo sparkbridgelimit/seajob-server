@@ -45,6 +45,12 @@ pub struct JobDefineUserAllRequest {
 }
 
 #[derive(Debug, Validate, Deserialize)]
+pub struct JobDefineDelete {
+    #[validate(range(min = 1, message = "job_define_id must be greater than 0"))]
+    pub job_define_id: i64,
+}
+
+#[derive(Debug, Validate, Deserialize)]
 pub struct JobDefineDetailRequest {
     #[validate(range(min = 1, message = "job_define_id must be greater than 0"))]
     pub job_define_id: i64,
