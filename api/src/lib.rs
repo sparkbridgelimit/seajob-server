@@ -11,7 +11,6 @@ use seajob_service::entry::init_services;
 mod index;
 mod job_contacted;
 mod job_define;
-mod job_param;
 mod job_task;
 mod router;
 

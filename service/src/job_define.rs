@@ -85,6 +85,7 @@ impl JobDefineService {
                     // 创建 job_param
                     job_param::ActiveModel {
                         job_define_id: Set(job_define_id),
+                        hello_text: Set(req.hello_text),
                         ..Default::default()
                     }
                         .insert(txn)
@@ -175,6 +176,7 @@ impl JobDefineService {
             interval: jpa.interval.unwrap_or_default(),
             timeout: jpa.timeout.unwrap_or_default(),
             wt2_cookie: jpa.wt2_cookie.unwrap_or_default(),
+            hello_text: jpa.hello_text.unwrap_or_default()
         };
 
         Ok(dto)

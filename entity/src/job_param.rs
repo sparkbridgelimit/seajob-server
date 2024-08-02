@@ -21,6 +21,9 @@ pub struct Model {
     #[sea_orm(comment = "超时时间")]
     pub timeout: Option<i32>,
 
+    #[sea_orm(comment = "hello_text")]
+    pub hello_text: Option<String>,
+
     #[sea_orm(comment = "wt2_cookie")]
     pub wt2_cookie: Option<String>,
 

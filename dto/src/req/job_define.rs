@@ -10,9 +10,8 @@ pub struct JobDefineCreateRequest {
     pub city_code: Option<String>,
     pub salary_range: Option<[i8; 2]>,
     pub key_kills: Option<Vec<String>>,
-    // ['蚂蚁集团']
+    pub hello_text: Option<String>,
     pub exclude_company: Option<Vec<String>>,
-    // ['远程']
     pub exclude_job: Option<Vec<String>>,
 }
 
