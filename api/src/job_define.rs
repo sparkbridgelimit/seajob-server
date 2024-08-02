@@ -54,7 +54,7 @@ pub async fn query_detail(req: web::Json<JobDefineDetailRequest>) -> Result<Http
     match JobDefineService::detail(req).await {
         Ok(res) => Ok(HttpResponse::Ok().json(ApiResponse::success(res))),
         Err(e) => {
-            error!("Failed to create job defines: {:?}", e);
+            error!("Failed to query detail of job define: {:?}", e);
             let error_response = ApiResponse::fail_with_error(ApiErr::SYSTEM);
             Ok(HttpResponse::InternalServerError().json(error_response))
         }
@@ -84,7 +84,7 @@ pub async fn delete_job_define(
             Ok(HttpResponse::Ok().json(response))
         }
         Err(e) => {
-            error!("Failed to create job defines: {:?}", e);
+            error!("Failed to delete job defines: {:?}", e);
             let error_response = ApiResponse::fail();
             Ok(HttpResponse::Ok().json(error_response))
         }

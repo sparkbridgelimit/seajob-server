@@ -56,9 +56,9 @@ impl JobDefineService {
                     // 插入用户
                     job_define::ActiveModel {
                         id: Set(job_define_id),
-                        user_id: Set(req.user_id.unwrap()),
-                        job_define_name: Set(req.job_define_name.unwrap()),
-                        job_define_desc: Set(req.job_define_desc.unwrap()),
+                        user_id: Set(req.user_id.unwrap_or_default()),
+                        job_define_name: Set(req.job_define_name.unwrap_or_default()),
+                        job_define_desc: Set(req.job_define_desc.unwrap_or_default()),
                         create_time: Default::default(),
                         update_time: Default::default(),
                     }
@@ -85,7 +85,6 @@ impl JobDefineService {
                     // 创建 job_param
                     job_param::ActiveModel {
                         job_define_id: Set(job_define_id),
-                        greet_num: Set(req.greet_num),
                         ..Default::default()
                     }
                         .insert(txn)
@@ -175,7 +174,6 @@ impl JobDefineService {
             exclude_job: jp.exclude_job,
             interval: jpa.interval.unwrap_or_default(),
             timeout: jpa.timeout.unwrap_or_default(),
-            greet_num: jpa.greet_num.unwrap_or_default(),
             wt2_cookie: jpa.wt2_cookie.unwrap_or_default(),
         };
 
@@ -193,20 +191,23 @@ impl JobDefineService {
                         .column(job_param::Column::Id)
                         .filter(job_param::Column::JobDefineId.eq(req.job_define_id))
                         .one(txn)
-                        .await?
-                        .ok_or_else(|| ServiceError::NotFoundError("Job param not found".to_string()))?;
+                        .await;
 
-                    jpa.delete(db::conn()).await?;
+                    if let Ok(Some(j)) = jpa {
+                        j.delete(txn).await?;
+                    }
 
                     let jp = JobPrefer::find()
                         .select_only()
                         .column(job_prefer::Column::Id)
                         .filter(job_prefer::Column::JobDefineId.eq(req.job_define_id))
                         .one(txn)
-                        .await?
-                        .ok_or_else(|| ServiceError::NotFoundError("Job prefer not found".to_string()))?;
+                        .await;
 
-                    jp.delete(db::conn()).await?;
+                    if let Ok(Some(p)) = jp {
+                        p.delete(txn).await?;
+                    }
+
                     Ok(true)
                 })
             })

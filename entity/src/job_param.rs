@@ -21,9 +21,6 @@ pub struct Model {
     #[sea_orm(comment = "超时时间")]
     pub timeout: Option<i32>,
 
-    #[sea_orm(comment = "单次沟通数")]
-    pub greet_num: Option<i32>,
-
     #[sea_orm(comment = "wt2_cookie")]
     pub wt2_cookie: Option<String>,
 

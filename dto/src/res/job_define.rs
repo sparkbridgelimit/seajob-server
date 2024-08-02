@@ -16,6 +16,5 @@ pub struct JobDefineDetailResponse {
     // job_param
     pub interval: i32,
     pub timeout: i32,
-    pub greet_num: i32,
     pub wt2_cookie: String
 }

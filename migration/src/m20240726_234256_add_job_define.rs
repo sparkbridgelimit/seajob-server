@@ -14,7 +14,6 @@ impl MigrationTrait for Migration {
                 user_id BIGINT NOT NULL,
                 job_define_name VARCHAR(255) NOT NULL,
                 job_define_desc VARCHAR(255),
-                greet_num INTEGER NOT NULL,
                 create_time TIMESTAMP WITH TIME ZONE NOT NULL,
                 update_time TIMESTAMP WITH TIME ZONE NOT NULL
             );
@@ -34,7 +33,6 @@ impl MigrationTrait for Migration {
             "COMMENT ON COLUMN job_define.user_id IS '关联的用户id';",
             "COMMENT ON COLUMN job_define.job_define_name IS '投递计划任务';",
             "COMMENT ON COLUMN job_define.job_define_desc IS '投递计划任务';",
-            "COMMENT ON COLUMN job_define.greet_num IS '单次沟通数';",
             "COMMENT ON COLUMN job_define.create_time IS '创建时间';",
             "COMMENT ON COLUMN job_define.update_time IS '更新时间';",
         ];
