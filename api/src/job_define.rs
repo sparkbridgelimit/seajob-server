@@ -1,8 +1,8 @@
-use actix_web::{get, post, put, web, Error, HttpRequest, HttpResponse};
+use actix_web::{get, post, web, Error, HttpResponse};
 use log::error;
 
 use seajob_common::response::{ApiErr, ApiResponse};
-use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest};
+use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineUpdateRequest};
 use seajob_service::job_define::JobDefineService;
 
 use crate::AppState;
@@ -62,14 +62,19 @@ pub async fn query_detail(req: web::Json<JobDefineDetailRequest>) -> Result<Http
 }
 
 // TODO 更新投递计划
-#[put("/")]
+#[post("/update")]
 pub async fn update_job_define(
-    _req: HttpRequest,
-    _: web::Data<AppState>,
+    json: web::Json<JobDefineUpdateRequest>,
 ) -> Result<HttpResponse, Error> {
-    let response = ApiResponse::success("hello man");
-
-    Ok(HttpResponse::Ok().json(response))
+    let req = json.into_inner();
+    match JobDefineService::update(req).await {
+        Ok(_) => Ok(HttpResponse::Ok().json(ApiResponse::success(true))),
+        Err(e) => {
+            error!("Failed to update job defines: {:?}", e);
+            let error_response = ApiResponse::fail_with_error(ApiErr::SYSTEM);
+            Ok(HttpResponse::InternalServerError().json(error_response))
+        }
+    }
 }
 
 // TODO 删除投递计划

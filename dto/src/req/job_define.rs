@@ -17,7 +17,7 @@ pub struct JobDefineCreateRequest {
 
 #[derive(Deserialize)]
 pub struct JobDefineUpdateRequest {
-    pub id: Option<i64>,
+    pub id: i64,
     pub job_define_name: Option<String>,
     pub job_define_desc: Option<String>,
     pub user_id: Option<i64>,
@@ -27,6 +27,7 @@ pub struct JobDefineUpdateRequest {
     pub key_kills: Option<Vec<String>>,
     pub exclude_company: Option<Vec<String>>,
     pub exclude_job: Option<Vec<String>>,
+    pub hello_text: Option<String>
 }
 
 #[derive(Deserialize)]

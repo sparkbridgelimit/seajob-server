@@ -3,15 +3,15 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, Que
 
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
-use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest};
+use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineUpdateRequest};
 use seajob_dto::res::job_define::JobDefineDetailResponse;
 use seajob_entity::job_define::Model;
 use seajob_entity::prelude::{JobDefine, JobParam, JobPrefer};
 use seajob_entity::{job_define, job_param, job_prefer, job_task};
+use chrono::{Utc};
 
 use crate::crud_service::{CRUDService, CRUDServiceImpl};
 use crate::err::ServiceError;
-
 pub struct JobDefineService {
     crud: CRUDServiceImpl<JobDefine>,
 }
@@ -100,6 +100,86 @@ impl JobDefineService {
         Ok(true)
     }
 
+    pub async fn update(req: JobDefineUpdateRequest) -> Result<bool, ServiceError> {
+        db::conn()
+            .transaction::<_, _, ServiceError>(|txn| {
+                Box::pin(async move {
+                    // 查询
+                    let jd = JobDefine::find_by_id(req.id)
+                        .one(txn)
+                        .await?
+                        .ok_or_else(|| ServiceError::NotFoundError("Job define not found".to_string()))?;
+
+                    let job_define_id = jd.id;
+
+                    let mut jd_active_model: job_define::ActiveModel = jd.into();
+
+                    if let Some(job_define_name) = req.job_define_name {
+                        jd_active_model.job_define_name = Set(job_define_name);
+                    }
+
+                    if let Some(job_define_desc) = req.job_define_desc {
+                        jd_active_model.job_define_desc = Set(job_define_desc);
+                    }
+                    jd_active_model.update_time = Set(Utc::now().into());
+                    // 保存更新
+                    jd_active_model.update(txn).await?;
+
+                    // 查询job_prefer
+                    let mut jp: job_prefer::ActiveModel = JobPrefer::find()
+                        .filter(job_prefer::Column::JobDefineId.eq(job_define_id))
+                        .one(txn)
+                        .await?
+                        .ok_or_else(|| ServiceError::NotFoundError("Job prefer not found".to_string()))?
+                        .into();
+
+                    if let Some(keyword) = req.keyword {
+                        jp.keyword = Set(keyword);
+                    }
+                    if let Some(city_code) = req.city_code {
+                        jp.city_code = Set(city_code);
+                    }
+                    if let Some(salary_range) = req.salary_range {
+                        jp.salary_range = Set(serde_json::to_string(&salary_range).unwrap());
+                    }
+                    if let Some(key_kills) = req.key_kills {
+                        jp.key_kills = Set(serde_json::to_string(&key_kills).unwrap());
+                    }
+                    if let Some(exclude_company) = req.exclude_company {
+                        jp.exclude_company = Set(serde_json::to_string(&exclude_company).unwrap());
+                    }
+                    if let Some(exclude_job) = req.exclude_job {
+                        jp.exclude_job = Set(serde_json::to_string(&exclude_job).unwrap());
+                    }
+
+                    jp.update_time = Set(Utc::now().into());
+                    // 保存更新
+                    jp.update(txn).await?;
+
+                    // 查询job_param
+                    let mut jpa: job_param::ActiveModel = JobParam::find()
+                        .filter(job_param::Column::JobDefineId.eq(job_define_id))
+                        .one(txn)
+                        .await?
+                        .ok_or_else(|| ServiceError::NotFoundError("Job param not found".to_string()))?
+                        .into();
+
+                    if let Some(hello_text) = req.hello_text {
+                        jpa.hello_text = Set(Some(hello_text));
+                    }
+                    jpa.update_time = Set(Utc::now().into());
+                    // 保存更新
+                    jpa.update(txn).await?;
+
+                    Ok(true)
+                })
+            })
+            .await
+            .map_err(|e| ServiceError::TransactionError(Box::new(e)))?;
+
+        Ok(true)
+    }
+
     // 运行一次任务, 根据参数每次
     pub async fn run(req: JobDefineRunRequest) -> Result<job_task::Model, ServiceError> {
         let id = {
@@ -176,7 +256,7 @@ impl JobDefineService {
             interval: jpa.interval.unwrap_or_default(),
             timeout: jpa.timeout.unwrap_or_default(),
             wt2_cookie: jpa.wt2_cookie.unwrap_or_default(),
-            hello_text: jpa.hello_text.unwrap_or_default()
+            hello_text: jpa.hello_text.unwrap_or_default(),
         };
 
         Ok(dto)
