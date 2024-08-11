@@ -35,7 +35,7 @@ fn job_task(cfg: &mut web::ServiceConfig) {
 pub fn entry(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
-            .service(web::scope("/").configure(index_routes))
+            .service(web::scope("/index").configure(index_routes))
             .service(web::scope("/job_define").configure(job_define_routes))
             .service(web::scope("/job_contacted").configure(job_contacted_routes))
             .service(web::scope("/job_task").configure(job_task)),

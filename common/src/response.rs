@@ -25,6 +25,16 @@ where
         }
     }
 }
+impl ApiResponse<()> {
+    pub fn success_only() -> Self {
+        ApiResponse {
+            success: false,
+            data: None,
+            err_code: None,
+            err_message: None,
+        }
+    }
+}
 
 // 专门为 ApiResponse<()> 定义 fail 和 fail_with_error 方法
 impl ApiResponse<()> {
