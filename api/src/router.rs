@@ -34,14 +34,34 @@ fn job_task(cfg: &mut web::ServiceConfig) {
         .service(job_task::end);
 }
 
+// 不需要鉴权的部分
+pub fn not_auth_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/auth").configure(auth_routes)
+    );
+}
+
+// 需要鉴权的部分
+pub fn need_auth_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/index").configure(index_routes)
+    )
+    .service(
+        web::scope("/job_define").configure(job_define_routes)
+    )
+    .service(
+        web::scope("/job_contacted").configure(job_contacted_routes)
+    )
+    .service(
+        web::scope("/job_task").configure(job_task)
+    );
+}
+
 // 模块主入口
 pub fn entry(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
-            .service(web::scope("/index").configure(index_routes))
-            .service(web::scope("/auth").configure(auth_routes))
-            .service(web::scope("/job_define").configure(job_define_routes))
-            .service(web::scope("/job_contacted").configure(job_contacted_routes))
-            .service(web::scope("/job_task").configure(job_task)),
+            .service(web::scope("/f").configure(not_auth_routes))
+            .service(web::scope("/s").configure(need_auth_routes))
     );
 }
