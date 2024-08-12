@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = [".", "api", "service", "entity", "migration", "common", "dto"]
+members = [".", "api", "service", "entity", "migration", "common", "dto", "middleware"]
 
 [dependencies]
 seajob-api = { path = "api" }

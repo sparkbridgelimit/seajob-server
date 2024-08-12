@@ -1,11 +1,13 @@
 use std::env;
 
 use actix_cors::Cors;
-use actix_web::{middleware, web, App, HttpServer};
+use actix_web::{middleware, web, App, HttpServer, HttpMessage};
+use actix_web::{dev::Service};
 use env_logger::Env;
 use listenfd::ListenFd;
 
 use seajob_common::db;
+use seajob_dto::user_context::UserContext;
 use seajob_service::entry::init_services;
 
 mod index;
@@ -14,6 +16,7 @@ mod job_define;
 mod job_task;
 mod router;
 mod auth;
+mod helper;
 
 #[derive(Debug, Clone)]
 struct AppState {}
@@ -49,6 +52,17 @@ pub async fn start() -> std::io::Result<()> {
             )
             .app_data(web::Data::new(state.clone()))
             .wrap(middleware::Logger::default()) // enable logger
+            .wrap_fn(|req, srv| {
+                if let Some(user_id) = req.headers().get("X-User-Id") {
+                    if let Ok(user_id_str) = user_id.to_str() {
+                        // 将 user_id 插入到请求的 extensions 中
+                        req.extensions_mut().insert(UserContext {
+                            user_id: user_id_str.to_string(),
+                        });
+                    }
+                }
+                srv.call(req)
+            })
             .configure(router::entry)
     });
 
