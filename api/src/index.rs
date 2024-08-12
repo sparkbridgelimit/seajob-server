@@ -1,11 +1,10 @@
-use actix_web::{get, web, Error, HttpRequest, HttpResponse, HttpMessage};
+use actix_web::{get, Error, HttpRequest, HttpResponse, HttpMessage};
 use log::info;
 use seajob_common::response::ApiResponse;
 use seajob_dto::user_context::UserContext;
-use crate::AppState;
 
 #[get("/")]
-async fn index(req: HttpRequest, _data: web::Data<AppState>) -> Result<HttpResponse, Error> {
+async fn index(req: HttpRequest) -> Result<HttpResponse, Error> {
     // 尝试从请求的 extensions 中获取 UserContext
     if let Some(user_context) = req.extensions().get::<UserContext>() {
         // 打印 user_id

@@ -16,7 +16,6 @@ mod job_define;
 mod job_task;
 mod router;
 mod auth;
-mod helper;
 
 #[derive(Debug, Clone)]
 struct AppState {}
@@ -45,6 +44,7 @@ pub async fn start() -> std::io::Result<()> {
                     .allowed_headers(vec![
                         actix_web::http::header::AUTHORIZATION,
                         actix_web::http::header::ACCEPT,
+                        actix_web::http::header::HeaderName::from_static("x-user-id"),
                     ])
                     .allowed_header(actix_web::http::header::CONTENT_TYPE)
                     .supports_credentials()
@@ -57,7 +57,7 @@ pub async fn start() -> std::io::Result<()> {
                     if let Ok(user_id_str) = user_id.to_str() {
                         // 将 user_id 插入到请求的 extensions 中
                         req.extensions_mut().insert(UserContext {
-                            user_id: user_id_str.to_string(),
+                            user_id: user_id_str.parse::<i64>().unwrap(),
                         });
                     }
                 }

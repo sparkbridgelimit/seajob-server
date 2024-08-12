@@ -1,22 +1,22 @@
-use actix_web::{get, post, web, Error, HttpResponse};
+use actix_web::{post, web, Error, HttpResponse, HttpRequest, HttpMessage};
 use log::error;
 
 use seajob_common::response::{ApiErr, ApiResponse};
 use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineUpdateRequest};
+use seajob_dto::user_context::UserContext;
 use seajob_service::job_define::JobDefineService;
 
 use crate::AppState;
 
 // DONE: 获取用户的所有投递计划
-#[get("/user/{user_id}")]
-pub async fn all_job_define(user_id: web::Path<String>) -> Result<HttpResponse, Error> {
-    let user_id: i64 = match user_id.parse::<i64>() {
-        Ok(id) => id,
-        Err(_) => {
-            error!("Validation error: user_id must be a valid i64");
-            return Ok(
-                HttpResponse::Ok().json(ApiResponse::fail_with_error(ApiErr::ValidationErrors))
-            );
+// #[get("/user/{user_id}")]
+#[post("/list")]
+pub async fn all_job_define(req: HttpRequest) -> Result<HttpResponse, Error> {
+    let user_id = match req.extensions().get::<UserContext>() {
+        Some(context) => context.user_id,
+        None => {
+            let error_response = ApiResponse::fail_with_error(ApiErr::NotAuth);
+            return Ok(HttpResponse::Ok().json(error_response));
         }
     };
     match JobDefineService::find_all_by_user(user_id).await {
