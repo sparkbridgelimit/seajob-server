@@ -1,9 +1,12 @@
 use actix_web::web;
-
-use crate::{index, job_contacted, job_define, job_task};
+use crate::{index, job_contacted, job_define, job_task, auth};
 
 fn index_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(index::index);
+}
+
+fn auth_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(auth::check);
 }
 
 // 已投工作模块
@@ -36,6 +39,7 @@ pub fn entry(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
             .service(web::scope("/index").configure(index_routes))
+            .service(web::scope("/auth").configure(auth_routes))
             .service(web::scope("/job_define").configure(job_define_routes))
             .service(web::scope("/job_contacted").configure(job_contacted_routes))
             .service(web::scope("/job_task").configure(job_task)),
