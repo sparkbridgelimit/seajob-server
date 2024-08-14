@@ -4,3 +4,4 @@ pub mod job_param;
 pub mod job_prefer;
 pub mod job_task;
 pub mod prelude;
+pub mod resume;

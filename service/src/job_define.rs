@@ -1,14 +1,17 @@
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, QueryFilter, QuerySelect, TransactionTrait};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, QueryFilter, QueryOrder,
+    QuerySelect, TransactionTrait,
+};
 
+use chrono::Utc;
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
-use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineUpdateRequest};
+use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineSaveCookieRequest, JobDefineUpdateRequest};
 use seajob_dto::res::job_define::JobDefineDetailResponse;
 use seajob_entity::job_define::Model;
 use seajob_entity::prelude::{JobDefine, JobParam, JobPrefer};
 use seajob_entity::{job_define, job_param, job_prefer, job_task};
-use chrono::{Utc};
 
 use crate::crud_service::{CRUDService, CRUDServiceImpl};
 use crate::err::ServiceError;
@@ -39,13 +42,14 @@ impl JobDefineService {
     pub async fn find_all_by_user(user_id: i64) -> Result<Vec<Model>, ServiceError> {
         let list = JobDefine::find()
             .filter(job_define::Column::UserId.eq(user_id))
+            .order_by_desc(job_define::Column::CreateTime)
             .all(db::conn())
             .await?;
 
         Ok(list)
     }
 
-    pub async fn create(req: JobDefineCreateRequest) -> Result<bool, ServiceError> {
+    pub async fn create(req: JobDefineCreateRequest, user_id: i64) -> Result<bool, ServiceError> {
         let job_define_id = {
             let id_gen = GLOBAL_IDGEN.lock().unwrap();
             id_gen.next_id().unwrap()
@@ -56,14 +60,14 @@ impl JobDefineService {
                     // 插入用户
                     job_define::ActiveModel {
                         id: Set(job_define_id),
-                        user_id: Set(req.user_id.unwrap_or_default()),
+                        user_id: Set(user_id),
                         job_define_name: Set(req.job_define_name.unwrap_or_default()),
                         job_define_desc: Set(req.job_define_desc.unwrap_or_default()),
                         create_time: Default::default(),
                         update_time: Default::default(),
                     }
-                        .insert(txn)
-                        .await?;
+                    .insert(txn)
+                    .await?;
 
                     // 创建 job_prefer
                     job_prefer::ActiveModel {
@@ -79,8 +83,8 @@ impl JobDefineService {
                         // 填充字段
                         ..Default::default()
                     }
-                        .insert(txn)
-                        .await?;
+                    .insert(txn)
+                    .await?;
 
                     // 创建 job_param
                     job_param::ActiveModel {
@@ -88,8 +92,8 @@ impl JobDefineService {
                         hello_text: Set(req.hello_text),
                         ..Default::default()
                     }
-                        .insert(txn)
-                        .await?;
+                    .insert(txn)
+                    .await?;
 
                     Ok(true)
                 })
@@ -108,7 +112,9 @@ impl JobDefineService {
                     let jd = JobDefine::find_by_id(req.id)
                         .one(txn)
                         .await?
-                        .ok_or_else(|| ServiceError::NotFoundError("Job define not found".to_string()))?;
+                        .ok_or_else(|| {
+                            ServiceError::NotFoundError("Job define not found".to_string())
+                        })?;
 
                     let job_define_id = jd.id;
 
@@ -130,7 +136,9 @@ impl JobDefineService {
                         .filter(job_prefer::Column::JobDefineId.eq(job_define_id))
                         .one(txn)
                         .await?
-                        .ok_or_else(|| ServiceError::NotFoundError("Job prefer not found".to_string()))?
+                        .ok_or_else(|| {
+                            ServiceError::NotFoundError("Job prefer not found".to_string())
+                        })?
                         .into();
 
                     if let Some(keyword) = req.keyword {
@@ -161,7 +169,9 @@ impl JobDefineService {
                         .filter(job_param::Column::JobDefineId.eq(job_define_id))
                         .one(txn)
                         .await?
-                        .ok_or_else(|| ServiceError::NotFoundError("Job param not found".to_string()))?
+                        .ok_or_else(|| {
+                            ServiceError::NotFoundError("Job param not found".to_string())
+                        })?
                         .into();
 
                     if let Some(hello_text) = req.hello_text {
@@ -201,10 +211,9 @@ impl JobDefineService {
         // 插入新的 job_task 记录
         let new_job_task = job_task::ActiveModel {
             id: Set(id),
-            job_define_id: Set(req.job_define_id.unwrap()),
+            job_define_id: Set(req.job_define_id),
             status: Set(String::from("pending")),
-            wt2_cookie: Default::default(),
-            target_num: Set(req.target_num.unwrap_or(0)),
+            target_num: Set(req.target_num),
             done_num: Set(0),
             last_error: Default::default(),
             create_time: Default::default(),
@@ -219,11 +228,12 @@ impl JobDefineService {
 
     pub async fn detail(
         req: JobDefineDetailRequest,
+        user_id: i64,
     ) -> Result<JobDefineDetailResponse, ServiceError> {
         // 查询job_define
         let jd = JobDefine::find()
             .filter(job_define::Column::Id.eq(req.job_define_id))
-            .filter(job_define::Column::UserId.eq(req.user_id))
+            .filter(job_define::Column::UserId.eq(user_id))
             .one(db::conn())
             .await?
             .ok_or_else(|| ServiceError::NotFoundError("Job define not found".to_string()))?;
@@ -297,4 +307,37 @@ impl JobDefineService {
             .map_err(|e| ServiceError::TransactionError(Box::new(e)))?;
         Ok(true)
     }
+
+    pub async fn save_cookie(req: JobDefineSaveCookieRequest) -> Result<bool, ServiceError> {
+        db::conn()
+            .transaction::<_, _, ServiceError>(|txn| {
+                Box::pin(async move {
+                    // 查询job_param
+                    let mut jpa: job_param::ActiveModel = JobParam::find()
+                        .filter(job_param::Column::JobDefineId.eq(req.job_define_id))
+                        .one(txn)
+                        .await?
+                        .ok_or_else(|| {
+                            ServiceError::NotFoundError("Job param not found".to_string())
+                        })?
+                        .into();
+
+                    if let Some(cookie) = req.cookie {
+                        jpa.wt2_cookie = Set(Some(cookie));
+                    }
+
+                    jpa.update_time = Set(Utc::now().into());
+
+                    // 保存更新
+                    jpa.update(txn).await?;
+
+                    Ok(true)
+                })
+            })
+            .await
+            .map_err(|e| ServiceError::TransactionError(Box::new(e)))?;
+
+        Ok(true)
+    }
+
 }

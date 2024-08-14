@@ -1,4 +1,4 @@
-use actix_web::{get, Error, HttpRequest, HttpResponse, HttpMessage};
+use actix_web::{get, Error, HttpMessage, HttpRequest, HttpResponse};
 use log::info;
 use seajob_common::response::ApiResponse;
 use seajob_dto::user_context::UserContext;

@@ -72,7 +72,7 @@ impl ApiErr {
             ApiErr::NotFound => 1001,
             ApiErr::UNAUTHORIZED => 1002,
             ApiErr::ValidationErrors => 1003,
-            ApiErr::NotAuth => 1004
+            ApiErr::NotAuth => 1004,
         }
     }
 
@@ -82,7 +82,7 @@ impl ApiErr {
             ApiErr::NotFound => "未找到资源",
             ApiErr::UNAUTHORIZED => "未授权",
             ApiErr::ValidationErrors => "参数校验未通过",
-            ApiErr::NotAuth => "未认证"
+            ApiErr::NotAuth => "未认证",
         }
     }
 }

@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest, web};
+use actix_web::{web, HttpRequest};
 
 async fn set_user_middleware(req: HttpRequest, next: web::ServiceConfig) -> impl Responder {
     // 在 req.extensions() 中存储数据

@@ -7,25 +7,16 @@ use serde::Serialize;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
-#[sea_orm(table_name = "job_task")]
+#[sea_orm(table_name = "resume")]
 pub struct Model {
     #[sea_orm(primary_key, comment = "Primary key")]
     pub id: i64,
 
-    #[sea_orm(comment = "关联的计划ID")]
-    pub job_define_id: i64,
+    #[sea_orm(comment = "关联用户ID")]
+    pub user_id: i64,
 
-    #[sea_orm(comment = "任务状态")]
+    #[sea_orm(comment = "内容")]
     pub status: String,
-
-    #[sea_orm(comment = "目标数量")]
-    pub target_num: i32,
-
-    #[sea_orm(comment = "完成数量")]
-    pub done_num: i32,
-
-    #[sea_orm(comment = "错误")]
-    pub last_error: Option<String>,
 
     #[sea_orm(comment = "创建时间")]
     pub create_time: Option<DateTime<Utc>>,
