@@ -1,13 +1,6 @@
-[package]
-name = "seajob-server"
-version = "0.1.0"
-edition = "2021"
-
 [workspace]
-members = [".", "api", "service", "entity", "migration", "common", "dto", "middleware"]
-
-[dependencies]
-seajob-api = { path = "api" }
+members = ["entry/seajob", "entry/auth", "entry/mind", "service", "entity", "migration", "common", "dto"]
+resolver = "1"
 
 [profile.release]
 codegen-units = 1

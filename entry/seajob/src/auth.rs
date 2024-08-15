@@ -60,6 +60,6 @@ impl actix_web::FromRequest for UserData {
 #[get("/check")]
 async fn check(_user: UserData) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok()
-        .append_header(("x-user-id", 1))
+        .append_header(("x-user-id", _user.user_id))
         .json(ApiResponse::success_only()))
 }

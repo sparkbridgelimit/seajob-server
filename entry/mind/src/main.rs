@@ -10,11 +10,7 @@ use seajob_common::{db, redis_client};
 use seajob_dto::user_context::UserContext;
 use seajob_service::entry::init_services;
 
-mod auth;
 mod index;
-mod job_contacted;
-mod job_define;
-mod job_task;
 mod router;
 
 #[derive(Debug, Clone)]
@@ -81,4 +77,12 @@ pub async fn start() -> std::io::Result<()> {
     server.run().await?;
 
     Ok(())
+}
+
+pub fn main() {
+    let result = start();
+
+    if let Some(err) = result.err() {
+        print!("Error: {err}");
+    }
 }

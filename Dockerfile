@@ -26,6 +26,8 @@ RUN apk add --no-cache libgcc
 # Copy the binary into the final image
 WORKDIR /app
 COPY --from=builder /app/target/release/seajob-server .
+COPY --from=builder /app/target/release/auth-server .
+COPY --from=builder /app/target/release/mind-server .
 
 # Set the binary as entrypoint
-ENTRYPOINT ["./seajob-server"]
+#ENTRYPOINT ["./seajob-server"]
