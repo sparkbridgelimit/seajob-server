@@ -6,7 +6,7 @@ use actix_web::{middleware, web, App, HttpMessage, HttpServer};
 use env_logger::Env;
 use listenfd::ListenFd;
 
-use seajob_common::db;
+use seajob_common::{db, redis_client};
 use seajob_dto::user_context::UserContext;
 use seajob_service::entry::init_services;
 
@@ -25,7 +25,11 @@ struct AppState {}
 pub async fn start() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
     init_services();
+
+    // 初始化DB连接
     db::init_db().await;
+    // 初始化redis连接
+    redis_client::init_redis().await;
 
     let state = AppState {};
 

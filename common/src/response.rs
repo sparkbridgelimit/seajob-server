@@ -28,8 +28,8 @@ where
 impl ApiResponse<()> {
     pub fn success_only() -> Self {
         ApiResponse {
-            success: false,
-            data: None,
+            success: true,
+            data: Some(()),
             err_code: None,
             err_message: None,
         }

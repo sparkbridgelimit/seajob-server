@@ -21,4 +21,6 @@ validator = { version = "0.18", features = ["derive"] }
 sea-orm = { version = "0.12.15", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros" ] }
 log = "0.4.22"
 actix-cors = "0.7.0"
+jsonwebtoken = "9.3.0"
+async-trait = "0.1.81"
 
