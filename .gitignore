@@ -1,4 +1,9 @@
 /target
-/entry/seajob/target/
 /entity/target/
 /service/target/
+/common/target/
+/migration/target/
+/dto/target/
+/entry/seajob/target/
+/entry/auth/target/
+/entry/mind/target/
