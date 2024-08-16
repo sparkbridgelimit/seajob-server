@@ -6,8 +6,6 @@ use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDe
 use seajob_dto::user_context::UserContext;
 use seajob_service::job_define::JobDefineService;
 
-use crate::AppState;
-
 // DONE: 获取用户的所有投递计划
 // #[get("/user/{user_id}")]
 #[post("/list")]
@@ -99,7 +97,6 @@ pub async fn update_job_define(
 #[post("/delete")]
 pub async fn delete_job_define(
     req: web::Json<JobDefineDelete>,
-    _: web::Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     match JobDefineService::delete(req.into_inner()).await {
         Ok(data) => {
