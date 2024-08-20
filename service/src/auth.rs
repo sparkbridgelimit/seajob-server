@@ -4,7 +4,7 @@ use chrono::Utc;
 use jsonwebtoken::{Algorithm, DecodingKey, encode, EncodingKey, errors::Error as JwtError, Header, TokenData, Validation};
 use once_cell::sync::Lazy;
 use redis::AsyncCommands;
-use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, QuerySelect, TransactionTrait, ActiveModelTrait};
+use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, QuerySelect, TransactionTrait, ActiveModelTrait, FromQueryResult};
 use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 
@@ -73,6 +73,9 @@ pub async fn get_user_from_redis(user_id: i64) -> Option<String> {
 }
 
 
+#[derive(FromQueryResult)]
+struct LimitedAccount {}
+
 // TODO: 注册
 pub async fn sign_up(params: SignUpRequest) -> Result<bool, ServiceError> {
     let user_id = {
@@ -88,6 +91,7 @@ pub async fn sign_up(params: SignUpRequest) -> Result<bool, ServiceError> {
                     .select_only()
                     .column(account::Column::Id)
                     .filter(account::Column::ProviderAccountId.eq(params.username.clone()))
+                    .into_model::<LimitedAccount>()
                     .one(txn)
                     .await?;
 

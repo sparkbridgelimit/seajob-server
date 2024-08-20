@@ -58,7 +58,6 @@ impl actix_web::FromRequest for UserData {
     }
 }
 
-// TODO: traefik中间件鉴权验证
 #[get("/check")]
 async fn check(_user: UserData) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok()
@@ -70,7 +69,7 @@ async fn check(_user: UserData) -> Result<HttpResponse, Error> {
 async fn sign_up(json: web::Json<SignUpRequest>) -> Result<HttpResponse, Error> {
     match auth::sign_up(json.into_inner()).await {
         Ok(_) => {
-            let response = ApiResponse::success_only();
+            let response = ApiResponse::success(true);
             Ok(HttpResponse::Ok().json(response))
         }
         Err(e) => {
