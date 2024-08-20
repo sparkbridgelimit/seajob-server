@@ -17,4 +17,13 @@ pub enum ServiceError {
 
     #[error("Unknown error: {0}")]
     UnknownError(String),
+
+    #[error("Conflict error: {0}")]
+    ConflictError(String),
+
+    #[error("Biz error: {0}")]
+    BizError(String),
+
+    #[error("System error: {0}")]
+    SystemError(String),
 }

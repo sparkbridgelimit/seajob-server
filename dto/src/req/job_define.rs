@@ -26,6 +26,7 @@ pub struct JobDefineUpdateRequest {
     pub exclude_company: Option<Vec<String>>,
     pub exclude_job: Option<Vec<String>>,
     pub hello_text: Option<String>,
+    pub wt2_cookie: Option<String>,
 }
 
 #[derive(Deserialize)]

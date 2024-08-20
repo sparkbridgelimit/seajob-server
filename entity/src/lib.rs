@@ -5,3 +5,5 @@ pub mod job_prefer;
 pub mod job_task;
 pub mod prelude;
 pub mod resume;
+pub mod user_define;
+pub mod account;

@@ -112,8 +112,16 @@ pub async fn delete_job_define(
 }
 
 #[post("/run")]
-pub async fn run(req: web::Json<JobDefineRunRequest>) -> Result<HttpResponse, Error> {
-    match JobDefineService::run(req.into_inner()).await {
+pub async fn run(req: HttpRequest, json: web::Json<JobDefineRunRequest>) -> Result<HttpResponse, Error> {
+        let user_id = match req.extensions().get::<UserContext>() {
+        Some(context) => context.user_id,
+        None => {
+            let error_response = ApiResponse::fail_with_error(ApiErr::NotAuth);
+            return Ok(HttpResponse::Ok().json(error_response));
+        }
+    };
+    let params = json.into_inner();
+    match JobDefineService::run(params, user_id).await {
         Ok(data) => {
             let response = ApiResponse::success(data);
             Ok(HttpResponse::Ok().json(response))

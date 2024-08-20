@@ -1,9 +1,20 @@
 use std::env;
+use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::Utc;
-use jsonwebtoken::{Algorithm, EncodingKey, Header, TokenData, errors::Error as JwtError, Validation, DecodingKey};
-use serde::{Serialize, Deserialize};
+use jsonwebtoken::{Algorithm, DecodingKey, encode, EncodingKey, errors::Error as JwtError, Header, TokenData, Validation};
 use once_cell::sync::Lazy;
+use redis::AsyncCommands;
+use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, QuerySelect, TransactionTrait, ActiveModelTrait};
+use sea_orm::ActiveValue::Set;
+use serde::{Deserialize, Serialize};
+
+use seajob_common::db;
+use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use seajob_common::redis_client::multiplexed_conn;
+use seajob_dto::req::auth::{SignInPayload, SignUpRequest};
+use seajob_dto::res::auth::SignInResponse;
+use seajob_entity::{account, user_define};
+use crate::err::ServiceError;
 
 static JWT_SECRET_KEY: Lazy<String> = Lazy::new(|| {
     env::var("JWT_SECRET_KEY").unwrap_or("local-secret-key".parse().unwrap())
@@ -61,29 +72,124 @@ pub async fn get_user_from_redis(user_id: i64) -> Option<String> {
         })
 }
 
+
 // TODO: 注册
-// pub async fn signup () {
-//
-// }
+pub async fn sign_up(params: SignUpRequest) -> Result<bool, ServiceError> {
+    let user_id = {
+        let id_gen = GLOBAL_IDGEN.lock().unwrap();
+        id_gen.next_id().unwrap()
+    };
+
+    db::conn()
+        .transaction::<_, _, ServiceError>(|txn| {
+            Box::pin(async move {
+                // 查看用户需要注册的用户名是否已经存在了
+                let existing_account = account::Entity::find()
+                    .select_only()
+                    .column(account::Column::Id)
+                    .filter(account::Column::ProviderAccountId.eq(params.username.clone()))
+                    .one(txn)
+                    .await?;
+
+                // 如果重复直接返回ServiceError
+                if existing_account.is_some() {
+                    return Err(ServiceError::ConflictError("Username already exists".into()));
+                }
+
+                // 如果 accounts 中没有记录, 创建user_define、account记录
+                user_define::ActiveModel {
+                    id: Set(user_id),
+                    status: Set(String::from("active")),
+                    extra: Default::default(),
+                    create_time: Default::default(),
+                    update_time: Default::default(),
+                }
+                    .insert(txn)
+                    .await?;
+
+                // 对密码进行哈希处理
+                let hashed_password = hash(&params.password, DEFAULT_COST)
+                    .map_err(|e| ServiceError::BizError(e.to_string()))?;
+
+                // 在 accounts 表中创建新的认证方式记录
+                account::ActiveModel {
+                    id: Default::default(),
+                    user_id: Set(user_id),
+                    provider_type: Set("credentials".to_string()),
+                    provider_id: Set("password".to_string()),
+                    provider_account_id: Set(params.username.clone()),
+                    access_token: Set(hashed_password),
+                    create_time: Set(Some(Utc::now())),
+                    update_time: Set(Some(Utc::now())),
+                    ..Default::default()
+                }.insert(txn).await?;
+
+                Ok(true)
+            })
+        })
+        .await
+        .map_err(|e| ServiceError::TransactionError(Box::new(e)))?;
+    Ok(true)
+}
 
 // TODO: 登陆
-// pub async fn login() {
-//     // 查找用户是否存在
-//     // 校验密码
-//     // 生成token
-//     // 放进redis中
-//     // 返回结构体
-// }
+pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceError> {
+    // 获取用户名对应的账户记录
+    let account = account::Entity::find()
+        .filter(account::Column::ProviderAccountId.eq(params.username.clone()))
+        .filter(account::Column::ProviderType.eq("credentials"))
+        .one(db::conn())
+        .await?
+        .ok_or(ServiceError::BizError("Invalid username or password".into()))?;
+
+    // 比对密码是否正确
+    let is_valid = verify(&params.password, &account.access_token)
+        .map_err(|_| ServiceError::BizError("Password verification failed".into()))?;
+
+    if !is_valid {
+        return Err(ServiceError::BizError("Invalid username or password".into()));
+    }
+
+    // 生成 JWT Token
+    let claims = Claims {
+        user_id: account.user_id,
+        exp: Utc::now().timestamp() as usize + 3600 * 24, // Token 1小时过期
+    };
+
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(JWT_SECRET_KEY.as_ref()),
+    ).map_err(|e| ServiceError::BizError(e.to_string()))?;
+
+    // 将 Token 存入 Redis
+    let mut redis_conn = multiplexed_conn().await;
+    redis_conn
+        .set_ex(format!("user:{}", account.user_id), token.clone(), 3600 * 24)
+        .await
+        .map_err(|e| ServiceError::SystemError(e.to_string()))?;
+
+    // 返回token
+    Ok(SignInResponse { token })
+}
+
 
 // TODO: 登出
-// pub async fn logout() {
-//     // redis中删除对应的key
-// }
+pub async fn sign_out(user_id: i64) -> Result<bool, ServiceError> {
+    let mut redis_conn = multiplexed_conn().await;
 
-// TODO: check
-// pub async fn check () {
-// }
+    // 从 Redis 中删除用户的 token
+    let result: i64 = redis_conn
+        .del(format!("user:{}", user_id))
+        .await
+        .map_err(|e| ServiceError::SystemError(e.to_string()))?;
 
+    if result == 1 {
+        Ok(true)
+    } else {
+        Err(ServiceError::SystemError("Sign out failed: token not found".into()))
+    }
+}
 
 #[cfg(test)]
 mod tests {

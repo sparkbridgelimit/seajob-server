@@ -1,12 +1,16 @@
 use std::future::Future;
 use std::pin::Pin;
-use actix_web::{get, Error, HttpRequest, HttpResponse, error};
+use actix_web::{get, Error, HttpRequest, HttpResponse, error, post, web};
 use actix_web::dev::Payload;
 use async_trait::async_trait;
+use log::error;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use seajob_common::response::ApiResponse;
+use seajob_dto::req::auth::{SignInPayload, SignUpRequest};
 use seajob_service::auth;
 use seajob_service::auth::get_user_from_redis;
+use seajob_service::job_define::JobDefineService;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct UserData {
@@ -62,4 +66,49 @@ async fn check(_user: UserData) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok()
         .append_header(("x-user-id", _user.user_id))
         .json(ApiResponse::success_only()))
+}
+
+#[post("/sign_up")]
+async fn sign_up(json: web::Json<SignUpRequest>) -> Result<HttpResponse, Error> {
+    match auth::sign_up(json.into_inner()).await {
+        Ok(_) => {
+            let response = ApiResponse::success_only();
+            Ok(HttpResponse::Ok().json(response))
+        }
+        Err(e) => {
+            error!("Failed to sign up: {:?}", e);
+            let error_response = ApiResponse::fail();
+            Ok(HttpResponse::Ok().json(error_response))
+        }
+    }
+}
+
+#[post("/sign_in")]
+async fn sign_in(json: web::Json<SignInPayload>) -> Result<HttpResponse, Error> {
+    match auth::sign_in(json.into_inner()).await {
+        Ok(_) => {
+            let response = ApiResponse::success_only();
+            Ok(HttpResponse::Ok().json(response))
+        }
+        Err(e) => {
+            error!("Failed to sign in: {:?}", e);
+            let error_response = ApiResponse::fail();
+            Ok(HttpResponse::Ok().json(error_response))
+        }
+    }
+}
+
+#[post("/sign_out")]
+async fn sign_out(user: UserData) -> Result<HttpResponse, Error> {
+        match auth::sign_out(user.user_id).await {
+        Ok(_) => {
+            let response = ApiResponse::success_only();
+            Ok(HttpResponse::Ok().json(response))
+        }
+        Err(e) => {
+            error!("Failed to sign in: {:?}", e);
+            let error_response = ApiResponse::fail();
+            Ok(HttpResponse::Ok().json(error_response))
+        }
+    }
 }

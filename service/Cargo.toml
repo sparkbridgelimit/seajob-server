@@ -23,4 +23,5 @@ jsonwebtoken = "9.3.0"
 serde = { version = "1.0.204", features = ["derive"] }
 once_cell = "1.19.0"
 redis = { version = "0.26.1", features = ["tokio-comp"] }
+bcrypt = "0.15.1"
 

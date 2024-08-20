@@ -8,7 +8,7 @@ use chrono::Utc;
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineSaveCookieRequest, JobDefineUpdateRequest};
-use seajob_dto::res::job_define::JobDefineDetailResponse;
+use seajob_dto::res::job_define::{JobDefineDetailResponse, JobDefineRunResponse};
 use seajob_entity::job_define::Model;
 use seajob_entity::prelude::{JobDefine, JobParam, JobPrefer};
 use seajob_entity::{job_define, job_param, job_prefer, job_task};
@@ -66,8 +66,8 @@ impl JobDefineService {
                         create_time: Default::default(),
                         update_time: Default::default(),
                     }
-                    .insert(txn)
-                    .await?;
+                        .insert(txn)
+                        .await?;
 
                     // 创建 job_prefer
                     job_prefer::ActiveModel {
@@ -83,8 +83,8 @@ impl JobDefineService {
                         // 填充字段
                         ..Default::default()
                     }
-                    .insert(txn)
-                    .await?;
+                        .insert(txn)
+                        .await?;
 
                     // 创建 job_param
                     job_param::ActiveModel {
@@ -92,8 +92,8 @@ impl JobDefineService {
                         hello_text: Set(req.hello_text),
                         ..Default::default()
                     }
-                    .insert(txn)
-                    .await?;
+                        .insert(txn)
+                        .await?;
 
                     Ok(true)
                 })
@@ -177,6 +177,9 @@ impl JobDefineService {
                     if let Some(hello_text) = req.hello_text {
                         jpa.hello_text = Set(Some(hello_text));
                     }
+                    if let Some(wt2_cookie) = req.wt2_cookie {
+                        jpa.wt2_cookie = Set(Some(wt2_cookie));
+                    }
                     jpa.update_time = Set(Utc::now().into());
                     // 保存更新
                     jpa.update(txn).await?;
@@ -191,7 +194,7 @@ impl JobDefineService {
     }
 
     // 运行一次任务, 根据参数每次
-    pub async fn run(req: JobDefineRunRequest) -> Result<job_task::Model, ServiceError> {
+    pub async fn run(req: JobDefineRunRequest, user_id: i64) -> Result<JobDefineRunResponse, ServiceError> {
         let id = {
             let id_gen = GLOBAL_IDGEN.lock().unwrap();
             id_gen.next_id().unwrap()
@@ -199,14 +202,28 @@ impl JobDefineService {
 
         let txn = db::conn().begin().await?;
 
-        // 查询运行参数
-        JobParam::find()
+        // 查询job_define
+        let jd = JobDefine::find()
+            .filter(job_define::Column::Id.eq(req.job_define_id))
+            .filter(job_define::Column::UserId.eq(user_id))
+            .one(&txn)
+            .await?
+            .ok_or_else(|| ServiceError::NotFoundError("Job define not found".to_string()))?;
+
+        // 查询job_prefer
+        let jp = JobPrefer::find()
+            .filter(job_prefer::Column::JobDefineId.eq(req.job_define_id))
+            .one(&txn)
+            .await?
+            .ok_or_else(|| ServiceError::NotFoundError("Job prefer not found".to_string()))?;
+
+        // 查询job_param
+        let jpa = JobParam::find()
             .filter(job_param::Column::JobDefineId.eq(req.job_define_id))
             .one(&txn)
             .await?
-            .ok_or(ServiceError::ValidationError(
-                "Job parameter not found".to_string(),
-            ))?;
+            .ok_or_else(|| ServiceError::NotFoundError("Job param not found".to_string()))?;
+
 
         // 插入新的 job_task 记录
         let new_job_task = job_task::ActiveModel {
@@ -220,10 +237,28 @@ impl JobDefineService {
             update_time: Default::default(),
         };
 
-        let inserted_job_task = new_job_task.insert(&txn).await?;
+        new_job_task.insert(&txn).await?;
+
+        let dto = JobDefineRunResponse {
+            job_define_id: req.job_define_id,
+            job_define_name: jd.job_define_name,
+            job_define_desc: jd.job_define_desc,
+            keyword: jp.keyword,
+            city_code: jp.city_code,
+            salary_range: jp.salary_range,
+            key_kills: jp.key_kills,
+            exclude_company: jp.exclude_company,
+            exclude_job: jp.exclude_job,
+            interval: jpa.interval.unwrap_or_default(),
+            timeout: jpa.timeout.unwrap_or_default(),
+            wt2_cookie: jpa.wt2_cookie.unwrap_or_default(),
+            hello_text: jpa.hello_text.unwrap_or_default(),
+            target_num: req.target_num,
+        };
+
         // 提交事务
         txn.commit().await?;
-        Ok(inserted_job_task)
+        Ok(dto)
     }
 
     pub async fn detail(
@@ -339,5 +374,4 @@ impl JobDefineService {
 
         Ok(true)
     }
-
 }
