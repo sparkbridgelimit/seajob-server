@@ -62,6 +62,7 @@ impl actix_web::FromRequest for UserData {
 async fn check(_user: UserData) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok()
         .append_header(("x-user-id", _user.user_id))
+        .append_header(("tenant_id", "seajob"))
         .json(ApiResponse::success_only()))
 }
 

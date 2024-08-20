@@ -76,7 +76,7 @@ pub async fn get_user_from_redis(user_id: i64) -> Option<String> {
 #[derive(FromQueryResult)]
 struct LimitedAccount {}
 
-// TODO: 注册
+// DONE: 注册
 pub async fn sign_up(params: SignUpRequest) -> Result<bool, ServiceError> {
     let user_id = {
         let id_gen = GLOBAL_IDGEN.lock().unwrap();
