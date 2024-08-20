@@ -5,12 +5,10 @@ use actix_web::dev::Payload;
 use async_trait::async_trait;
 use log::error;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use seajob_common::response::ApiResponse;
 use seajob_dto::req::auth::{SignInPayload, SignUpRequest};
 use seajob_service::auth;
 use seajob_service::auth::get_user_from_redis;
-use seajob_service::job_define::JobDefineService;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct UserData {
