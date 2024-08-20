@@ -5,7 +5,7 @@ FROM rust:1.80.0-alpine3.20 as builder
 ENV RUSTFLAGS="-C target-feature=-crt-static"
 
 # Use a faster mirror for Alpine packages
-RUN set -eux && sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
+RUN set -eux && sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # Install necessary dependencies for building the application
 RUN apk add --no-cache musl-dev pkgconfig openssl-dev git
