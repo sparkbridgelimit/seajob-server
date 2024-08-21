@@ -12,7 +12,7 @@ use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use seajob_common::redis_client::multiplexed_conn;
 use seajob_dto::req::auth::{SignInPayload, SignUpRequest};
-use seajob_dto::res::auth::SignInResponse;
+use seajob_dto::res::auth::{SignInResponse, SignUpResponse};
 use seajob_entity::{account, user_define};
 use crate::err::ServiceError;
 
@@ -77,7 +77,7 @@ pub async fn get_user_from_redis(user_id: i64) -> Option<String> {
 struct LimitedAccount {}
 
 // DONE: 注册
-pub async fn sign_up(params: SignUpRequest) -> Result<bool, ServiceError> {
+pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceError> {
     let user_id = {
         let id_gen = GLOBAL_IDGEN.lock().unwrap();
         id_gen.next_id().unwrap()
@@ -133,10 +133,39 @@ pub async fn sign_up(params: SignUpRequest) -> Result<bool, ServiceError> {
         })
         .await
         .map_err(|e| ServiceError::TransactionError(Box::new(e)))?;
-    Ok(true)
+
+    // 生成 JWT Token
+    let claims = Claims {
+        user_id,
+        exp: Utc::now().timestamp() as usize + 3600 * 24, // Token 1小时过期
+    };
+
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(JWT_SECRET_KEY.as_ref()),
+    ).map_err(|e| ServiceError::BizError(e.to_string()))?;
+
+    let cache_user_data = CachedUserData {
+        user_id
+    };
+
+    // 将 用户信息 存入 Redis
+    let mut redis_conn = multiplexed_conn().await;
+    redis_conn
+        .set_ex(format!("user:{}", user_id), serde_json::to_string(&cache_user_data).unwrap(), 3600 * 24)
+        .await
+        .map_err(|e| ServiceError::SystemError(e.to_string()))?;
+
+    // 返回token
+    Ok(SignUpResponse { token, exp_at: claims.exp })
 }
 
-// TODO: 登陆
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CachedUserData {
+    user_id: i64,
+}
+
 pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceError> {
     // 获取用户名对应的账户记录
     let account = account::Entity::find()
@@ -166,15 +195,18 @@ pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceErr
         &EncodingKey::from_secret(JWT_SECRET_KEY.as_ref()),
     ).map_err(|e| ServiceError::BizError(e.to_string()))?;
 
-    // 将 Token 存入 Redis
+    let cache_user_data = CachedUserData {
+        user_id: account.user_id
+    };
+    // 将 用户信息 存入 Redis
     let mut redis_conn = multiplexed_conn().await;
     redis_conn
-        .set_ex(format!("user:{}", account.user_id), token.clone(), 3600 * 24)
+        .set_ex(format!("user:{}", account.user_id), serde_json::to_string(&cache_user_data).unwrap(), 3600 * 24)
         .await
         .map_err(|e| ServiceError::SystemError(e.to_string()))?;
 
     // 返回token
-    Ok(SignInResponse { token })
+    Ok(SignInResponse { token, exp_at: claims.exp })
 }
 
 

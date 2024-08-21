@@ -19,7 +19,7 @@ pub fn need_auth_routes(cfg: &mut web::ServiceConfig) {
 // 模块主入口
 pub fn entry(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("/auth/api")
+        web::scope("/api")
             // 不需要认证
             .service(web::scope("/f").configure(not_auth_routes))
             // 需要认证

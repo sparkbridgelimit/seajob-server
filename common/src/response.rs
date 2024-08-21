@@ -29,7 +29,7 @@ impl ApiResponse<()> {
     pub fn success_only() -> Self {
         ApiResponse {
             success: true,
-            data: Some(()),
+            data: None,
             err_code: None,
             err_message: None,
         }
