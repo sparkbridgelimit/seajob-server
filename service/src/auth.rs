@@ -1,40 +1,20 @@
-use std::env;
 use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::Utc;
-use jsonwebtoken::{Algorithm, DecodingKey, encode, EncodingKey, errors::Error as JwtError, Header, TokenData, Validation};
-use once_cell::sync::Lazy;
+use jsonwebtoken::{Algorithm, encode, EncodingKey, Header};
 use redis::AsyncCommands;
-use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, QuerySelect, TransactionTrait, ActiveModelTrait, FromQueryResult};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, FromQueryResult, QueryFilter, QuerySelect, TransactionTrait};
 use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 
+use seajob_common::auth::{Claims, JWT_SECRET_KEY};
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use seajob_common::redis_client::multiplexed_conn;
 use seajob_dto::req::auth::{SignInPayload, SignUpRequest};
 use seajob_dto::res::auth::{SignInResponse, SignUpResponse};
 use seajob_entity::{account, user_define};
+
 use crate::err::ServiceError;
-
-static JWT_SECRET_KEY: Lazy<String> = Lazy::new(|| {
-    env::var("JWT_SECRET_KEY").unwrap_or("local-secret-key".parse().unwrap())
-});
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Claims {
-    /// 保存的用户id
-    pub user_id: i64,
-    pub exp: usize,
-}
-
-impl Claims {
-    pub fn new(id: i64, exp: usize) -> Self {
-        Self {
-            user_id: id,
-            exp,
-        }
-    }
-}
 
 /// 创建token
 pub fn create_jwt(id: i64) -> String {
@@ -49,29 +29,6 @@ pub fn create_jwt(id: i64) -> String {
         .map(|s| format!("Bearer {}", s))
         .unwrap()
 }
-
-/// 验证token
-pub fn validate_token(token: &str) -> Result<TokenData<Claims>, JwtError> {
-    let validation = Validation::new(Algorithm::HS256);
-    let key = DecodingKey::from_secret(JWT_SECRET_KEY.as_ref());
-    let data = jsonwebtoken::decode::<Claims>(token, &key, &validation)?;
-    Ok(data)
-}
-
-pub async fn get_user_from_redis(user_id: i64) -> Option<String> {
-    let mut m_conn = multiplexed_conn().await;
-
-    // 使用 Redis GET 命令获取用户数据
-    redis::cmd("GET")
-        .arg(format!("user:{}", user_id))
-        .query_async(&mut m_conn)
-        .await
-        .unwrap_or_else(|e| {
-            eprintln!("无法从 Redis 获取用户数据: {}", e);
-            None
-        })
-}
-
 
 #[derive(FromQueryResult)]
 struct LimitedAccount {}

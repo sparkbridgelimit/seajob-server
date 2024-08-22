@@ -1,15 +1,14 @@
 use actix_web::{post, web, Error, HttpResponse};
 use log::error;
-
+use seajob_common::auth::Authenticate;
 use seajob_common::response::{ApiErr, ApiResponse};
-use seajob_common::req::UserContext;
 use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineSaveCookieRequest, JobDefineUpdateRequest};
 use seajob_service::job_define::JobDefineService;
 
 // DONE: 获取用户的所有投递计划
 // #[get("/user/{user_id}")]
 #[post("/list")]
-pub async fn all_job_define(user_context: UserContext) -> Result<HttpResponse, Error> {
+pub async fn all_job_define(user_context: Authenticate) -> Result<HttpResponse, Error> {
     match JobDefineService::find_all_by_user(user_context.user_id).await {
         Ok(job_define_res) => {
             let response = ApiResponse::success(job_define_res);
@@ -27,7 +26,7 @@ pub async fn all_job_define(user_context: UserContext) -> Result<HttpResponse, E
 #[post("/create")]
 pub async fn create_job_define(
     json: web::Json<JobDefineCreateRequest>,
-    user_context: UserContext,
+    user_context: Authenticate,
 ) -> Result<HttpResponse, Error> {
     let params = json.into_inner();
     match JobDefineService::create(params, user_context.user_id).await {
@@ -43,7 +42,7 @@ pub async fn create_job_define(
 #[post("/detail")]
 pub async fn query_detail(
     json: web::Json<JobDefineDetailRequest>,
-    user_context: UserContext,
+    user_context: Authenticate,
 ) -> Result<HttpResponse, Error> {
     let params = json.into_inner();
     match JobDefineService::detail(params, user_context.user_id).await {
@@ -89,7 +88,7 @@ pub async fn delete_job_define(
 }
 
 #[post("/run")]
-pub async fn run(user_context: UserContext, json: web::Json<JobDefineRunRequest>) -> Result<HttpResponse, Error> {
+pub async fn run(user_context: Authenticate, json: web::Json<JobDefineRunRequest>) -> Result<HttpResponse, Error> {
     let params = json.into_inner();
     match JobDefineService::run(params, user_context.user_id).await {
         Ok(data) => {
