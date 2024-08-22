@@ -10,7 +10,6 @@ use seajob_common::{db, redis_client};
 use seajob_dto::user_context::UserContext;
 use seajob_service::entry::init_services;
 
-mod auth;
 mod index;
 mod job_contacted;
 mod job_define;

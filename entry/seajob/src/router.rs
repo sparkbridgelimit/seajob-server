@@ -1,12 +1,8 @@
-use crate::{auth, index, job_contacted, job_define, job_task};
+use crate::{index, job_contacted, job_define, job_task};
 use actix_web::web;
 
 fn index_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(index::index);
-}
-
-fn auth_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(auth::check);
 }
 
 // 已投工作模块
@@ -37,8 +33,7 @@ fn job_task(cfg: &mut web::ServiceConfig) {
 
 // 不需要鉴权的部分
 pub fn not_auth_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/auth").configure(auth_routes))
-        .service(web::scope("/index").configure(index_routes));
+    cfg.service(web::scope("/index").configure(index_routes));
 }
 
 // 需要鉴权的部分

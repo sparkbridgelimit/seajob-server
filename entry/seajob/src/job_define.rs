@@ -1,23 +1,16 @@
-use actix_web::{post, web, Error, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{post, web, Error, HttpResponse};
 use log::error;
 
 use seajob_common::response::{ApiErr, ApiResponse};
+use seajob_common::req::UserContext;
 use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineSaveCookieRequest, JobDefineUpdateRequest};
-use seajob_dto::user_context::UserContext;
 use seajob_service::job_define::JobDefineService;
 
 // DONE: 获取用户的所有投递计划
 // #[get("/user/{user_id}")]
 #[post("/list")]
-pub async fn all_job_define(req: HttpRequest) -> Result<HttpResponse, Error> {
-    let user_id = match req.extensions().get::<UserContext>() {
-        Some(context) => context.user_id,
-        None => {
-            let error_response = ApiResponse::fail_with_error(ApiErr::NotAuth);
-            return Ok(HttpResponse::Ok().json(error_response));
-        }
-    };
-    match JobDefineService::find_all_by_user(user_id).await {
+pub async fn all_job_define(user_context: UserContext) -> Result<HttpResponse, Error> {
+    match JobDefineService::find_all_by_user(user_context.user_id).await {
         Ok(job_define_res) => {
             let response = ApiResponse::success(job_define_res);
             Ok(HttpResponse::Ok().json(response))
@@ -33,18 +26,11 @@ pub async fn all_job_define(req: HttpRequest) -> Result<HttpResponse, Error> {
 // DONE 创建投递计划
 #[post("/create")]
 pub async fn create_job_define(
-    req: HttpRequest,
     json: web::Json<JobDefineCreateRequest>,
+    user_context: UserContext,
 ) -> Result<HttpResponse, Error> {
-    let user_id = match req.extensions().get::<UserContext>() {
-        Some(context) => context.user_id,
-        None => {
-            let error_response = ApiResponse::fail_with_error(ApiErr::NotAuth);
-            return Ok(HttpResponse::Ok().json(error_response));
-        }
-    };
     let params = json.into_inner();
-    match JobDefineService::create(params, user_id).await {
+    match JobDefineService::create(params, user_context.user_id).await {
         Ok(_) => Ok(HttpResponse::Ok().json(ApiResponse::success(true))),
         Err(e) => {
             error!("Failed to create job defines: {:?}", e);
@@ -56,18 +42,11 @@ pub async fn create_job_define(
 
 #[post("/detail")]
 pub async fn query_detail(
-    req: HttpRequest,
     json: web::Json<JobDefineDetailRequest>,
+    user_context: UserContext,
 ) -> Result<HttpResponse, Error> {
-    let user_id = match req.extensions().get::<UserContext>() {
-        Some(context) => context.user_id,
-        None => {
-            let error_response = ApiResponse::fail_with_error(ApiErr::NotAuth);
-            return Ok(HttpResponse::Ok().json(error_response));
-        }
-    };
     let params = json.into_inner();
-    match JobDefineService::detail(params, user_id).await {
+    match JobDefineService::detail(params, user_context.user_id).await {
         Ok(res) => Ok(HttpResponse::Ok().json(ApiResponse::success(res))),
         Err(e) => {
             error!("Failed to query detail of job define: {:?}", e);
@@ -77,7 +56,6 @@ pub async fn query_detail(
     }
 }
 
-// TODO 更新投递计划
 #[post("/update")]
 pub async fn update_job_define(
     json: web::Json<JobDefineUpdateRequest>,
@@ -93,7 +71,6 @@ pub async fn update_job_define(
     }
 }
 
-// TODO 删除投递计划
 #[post("/delete")]
 pub async fn delete_job_define(
     req: web::Json<JobDefineDelete>,
@@ -112,16 +89,9 @@ pub async fn delete_job_define(
 }
 
 #[post("/run")]
-pub async fn run(req: HttpRequest, json: web::Json<JobDefineRunRequest>) -> Result<HttpResponse, Error> {
-        let user_id = match req.extensions().get::<UserContext>() {
-        Some(context) => context.user_id,
-        None => {
-            let error_response = ApiResponse::fail_with_error(ApiErr::NotAuth);
-            return Ok(HttpResponse::Ok().json(error_response));
-        }
-    };
+pub async fn run(user_context: UserContext, json: web::Json<JobDefineRunRequest>) -> Result<HttpResponse, Error> {
     let params = json.into_inner();
-    match JobDefineService::run(params, user_id).await {
+    match JobDefineService::run(params, user_context.user_id).await {
         Ok(data) => {
             let response = ApiResponse::success(data);
             Ok(HttpResponse::Ok().json(response))
