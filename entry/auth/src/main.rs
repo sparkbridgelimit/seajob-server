@@ -1,12 +1,10 @@
 use std::env;
 use actix_cors::Cors;
-use actix_web::dev::Service;
-use actix_web::{middleware, web, App, HttpMessage, HttpServer};
+use actix_web::{middleware, web, App, HttpServer};
 use env_logger::Env;
 use listenfd::ListenFd;
 
 use seajob_common::{db, redis_client};
-use seajob_dto::user_context::UserContext;
 use seajob_service::entry::init_services;
 
 mod auth;

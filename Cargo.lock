@@ -582,6 +582,7 @@ dependencies = [
  "seajob-service",
  "serde",
  "serde_json",
+ "thiserror",
  "tokio",
  "validator",
 ]

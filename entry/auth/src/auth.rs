@@ -1,6 +1,6 @@
 use std::future::Future;
 use std::pin::Pin;
-use actix_web::{get, Error, HttpRequest, HttpResponse, error, post, web};
+use actix_web::{get, Error, HttpRequest, HttpResponse, error, post, web, ResponseError};
 use actix_web::dev::Payload;
 use async_trait::async_trait;
 use log::error;
@@ -9,6 +9,36 @@ use seajob_common::response::ApiResponse;
 use seajob_dto::req::auth::{SignInPayload, SignUpRequest};
 use seajob_service::auth;
 use seajob_service::auth::get_user_from_redis;
+
+// 定义错误类型
+#[derive(Debug, thiserror::Error)]
+pub enum CustomError {
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+}
+
+// 定义错误响应格式
+#[derive(Serialize)]
+struct ErrorResponse {
+    success: bool,
+    error_code: u16,
+    error_message: String,
+}
+
+// 为错误类型实现 ResponseError，以生成自定义 HttpResponse
+impl ResponseError for CustomError {
+    fn error_response(&self) -> HttpResponse {
+        match self {
+            CustomError::Unauthorized(msg) => {
+                HttpResponse::Ok().json(ErrorResponse {
+                    success: false,
+                    error_code: 401,
+                    error_message: msg.clone(),
+                })
+            }
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct UserData {
@@ -32,28 +62,28 @@ async fn validate_user(user_id: i64) -> Result<UserData, Error> {
 
 #[async_trait(? Send)]
 impl actix_web::FromRequest for UserData {
-    type Error = Error;
+    type Error = CustomError;
     type Future = Pin<Box<dyn Future<Output=Result<Self, Self::Error>>>>;
 
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
         let req = req.clone();
         Box::pin(async move {
             let auth_header = req.headers().get("Authorization")
-                .ok_or_else(|| error::ErrorUnauthorized("Authorization Not Found"))?;
+                .ok_or_else(|| CustomError::Unauthorized("Authorization Not Found".into()))?;
 
             let token = auth_header
                 .to_str()
-                .map_err(|_| error::ErrorBadRequest("Invalid Authorization"))?
+                .map_err(|_| CustomError::Unauthorized("Invalid Authorization".into()))?
                 .strip_prefix("Bearer ")
-                .ok_or_else(|| error::ErrorBadRequest("Invalid Authorization"))?;
+                .ok_or_else(|| CustomError::Unauthorized("Invalid Authorization".into()))?;
 
             let data = auth::validate_token(token)
                 .map_err(|e| {
                     eprintln!("{}", e);
-                    error::ErrorBadRequest("Invalid Authorization")
+                    CustomError::Unauthorized("Invalid Authorization".into())
                 })?;
 
-            validate_user(data.claims.user_id).await
+            validate_user(data.claims.user_id).await.map_err(|_| CustomError::Unauthorized("Invalid user in Redis".into()))
         })
     }
 }
