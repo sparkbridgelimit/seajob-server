@@ -1,13 +1,11 @@
 use std::env;
 
 use actix_cors::Cors;
-use actix_web::dev::Service;
-use actix_web::{middleware, web, App, HttpMessage, HttpServer};
+use actix_web::{middleware, web, App, HttpServer};
 use env_logger::Env;
 use listenfd::ListenFd;
 
 use seajob_common::{db, redis_client};
-use seajob_dto::user_context::UserContext;
 use seajob_service::entry::init_services;
 
 mod index;
@@ -48,24 +46,14 @@ pub async fn start() -> std::io::Result<()> {
                         actix_web::http::header::AUTHORIZATION,
                         actix_web::http::header::ACCEPT,
                         actix_web::http::header::HeaderName::from_static("x-user-id"),
+                        actix_web::http::header::HeaderName::from_static("tenant_id"),
                     ])
                     .allowed_header(actix_web::http::header::CONTENT_TYPE)
                     .supports_credentials()
                     .max_age(3600),
             )
             .app_data(web::Data::new(state.clone()))
-            .wrap(middleware::Logger::default()) // enable logger
-            .wrap_fn(|req, srv| {
-                if let Some(user_id) = req.headers().get("x-user-id") {
-                    if let Ok(user_id_str) = user_id.to_str() {
-                        // 将 user_id 插入到请求的 extensions 中
-                        req.extensions_mut().insert(UserContext {
-                            user_id: user_id_str.parse::<i64>().unwrap(),
-                        });
-                    }
-                }
-                srv.call(req)
-            })
+            .wrap(middleware::Logger::default())
             .configure(router::entry)
     });
 
