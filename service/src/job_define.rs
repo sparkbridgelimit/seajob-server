@@ -77,7 +77,7 @@ impl JobDefineService {
                         // 转["1", "1"]
                         salary_range: Set(serde_json::to_string(&req.salary_range).unwrap()),
                         // 转[""]
-                        key_kills: Set(serde_json::to_string(&req.salary_range).unwrap()),
+                        key_kills: Set(serde_json::to_string(&req.key_kills).unwrap()),
                         exclude_company: Set(serde_json::to_string(&req.exclude_company).unwrap()),
                         exclude_job: Set(serde_json::to_string(&req.exclude_job).unwrap()),
                         // 填充字段
