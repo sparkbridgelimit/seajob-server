@@ -10,10 +10,6 @@ CREATE TABLE IF NOT EXISTS public.accounts
     PRIMARY KEY (id)
 );
 
-
-ALTER TABLE IF EXISTS public.accounts
-    OWNER to seajob;
-
 CREATE INDEX provider_account_id ON accounts(provider_account_id);
 
 CREATE INDEX provider_id ON accounts(provider_id);

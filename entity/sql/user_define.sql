@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS public.user_define
 (
 	id bigint NOT NULL,
-    CONSTRAINT user_define_pkey PRIMARY KEY (id),
-	status character varying(20),
-	extra character varying,
+    PRIMARY KEY (id),
+	status VARCHAR(20),
+	extra VARCHAR,
     create_time timestamp with time zone DEFAULT now(),
     update_time timestamp with time zone DEFAULT now()
 );
