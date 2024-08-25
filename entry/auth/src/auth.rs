@@ -57,3 +57,4 @@ async fn sign_out(user: Authenticate) -> Result<HttpResponse, Error> {
         }
     }
 }
+

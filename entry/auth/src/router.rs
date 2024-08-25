@@ -1,4 +1,4 @@
-use crate::{auth};
+use crate::{activate, auth};
 use actix_web::web;
 
 
@@ -13,7 +13,9 @@ pub fn not_auth_routes(cfg: &mut web::ServiceConfig) {
 pub fn need_auth_routes(cfg: &mut web::ServiceConfig) {
     // 登出
     cfg.service(auth::sign_out)
-        .service(auth::check);
+        .service(auth::check)
+        .service(activate::create)
+        .service(activate::consume);
 }
 
 // 模块主入口

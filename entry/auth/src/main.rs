@@ -10,6 +10,7 @@ use seajob_service::entry::init_services;
 mod auth;
 mod router;
 mod index;
+mod activate;
 
 #[derive(Debug, Clone)]
 struct AppState {}

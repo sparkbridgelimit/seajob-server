@@ -13,7 +13,7 @@ pub struct Model {
     pub id: i64,
 
     #[sea_orm(comment = "用户ID")]
-    pub user_id: i32,
+    pub user_id: i64,
 
     #[sea_orm(comment = "业务标识")]
     pub biz_code: String,

@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS public.user_membership (
     id BIGINT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id BIGINT NOT NULL,
     biz_code VARCHAR NOT NULL,
     expires_at timestamp with time zone NOT NULL,
     create_time timestamp with time zone DEFAULT now(),

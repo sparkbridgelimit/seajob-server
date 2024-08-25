@@ -3029,6 +3029,7 @@ dependencies = [
  "criterion",
  "jsonwebtoken",
  "once_cell",
+ "rand",
  "redis",
  "sea-orm 0.12.15",
  "serde",
