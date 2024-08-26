@@ -2,7 +2,7 @@ use actix_web::{post, web, Error, HttpResponse};
 use log::error;
 use seajob_common::auth::Authenticate;
 use seajob_common::response::{ApiErr, ApiResponse};
-use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineSaveCookieRequest, JobDefineUpdateRequest};
+use seajob_dto::req::job_define::{JobDefineCookieRequest, JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineSaveCookieRequest, JobDefineUpdateRequest};
 use seajob_service::job_define::JobDefineService;
 
 // DONE: 获取用户的所有投递计划
@@ -49,6 +49,22 @@ pub async fn query_detail(
         Ok(res) => Ok(HttpResponse::Ok().json(ApiResponse::success(res))),
         Err(e) => {
             error!("Failed to query detail of job define: {:?}", e);
+            let error_response = ApiResponse::fail_with_error(ApiErr::SYSTEM);
+            Ok(HttpResponse::InternalServerError().json(error_response))
+        }
+    }
+}
+
+#[post("/get_cookie")]
+pub async fn get_cookie(
+    json: web::Json<JobDefineCookieRequest>,
+    _: Authenticate,
+) -> Result<HttpResponse, Error> {
+    let params = json.into_inner();
+    match JobDefineService::get_cookie(params).await {
+        Ok(res) => Ok(HttpResponse::Ok().json(ApiResponse::success(res))),
+        Err(e) => {
+            error!("Failed to get_cookie: {:?}", e);
             let error_response = ApiResponse::fail_with_error(ApiErr::SYSTEM);
             Ok(HttpResponse::InternalServerError().json(error_response))
         }

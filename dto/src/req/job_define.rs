@@ -58,3 +58,8 @@ pub struct JobDefineSaveCookieRequest {
     pub job_define_id: i64,
     pub cookie: Option<String>
 }
+
+#[derive(Deserialize)]
+pub struct JobDefineCookieRequest {
+    pub job_define_id: i64
+}

@@ -7,8 +7,13 @@ use sea_orm::{
 use chrono::Utc;
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
-use seajob_dto::req::job_define::{JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineSaveCookieRequest, JobDefineUpdateRequest};
-use seajob_dto::res::job_define::{JobDefineDetailResponse, JobDefineRunResponse};
+use seajob_dto::req::job_define::{
+    JobDefineCookieRequest, JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest,
+    JobDefineRunRequest, JobDefineSaveCookieRequest, JobDefineUpdateRequest,
+};
+use seajob_dto::res::job_define::{
+    JobDefineCookieResponse, JobDefineDetailResponse, JobDefineRunResponse,
+};
 use seajob_entity::job_define::Model;
 use seajob_entity::prelude::{JobDefine, JobParam, JobPrefer};
 use seajob_entity::{job_define, job_param, job_prefer, job_task};
@@ -66,8 +71,8 @@ impl JobDefineService {
                         create_time: Default::default(),
                         update_time: Default::default(),
                     }
-                        .insert(txn)
-                        .await?;
+                    .insert(txn)
+                    .await?;
 
                     // 创建 job_prefer
                     job_prefer::ActiveModel {
@@ -83,8 +88,8 @@ impl JobDefineService {
                         // 填充字段
                         ..Default::default()
                     }
-                        .insert(txn)
-                        .await?;
+                    .insert(txn)
+                    .await?;
 
                     // 创建 job_param
                     job_param::ActiveModel {
@@ -92,8 +97,8 @@ impl JobDefineService {
                         hello_text: Set(req.hello_text),
                         ..Default::default()
                     }
-                        .insert(txn)
-                        .await?;
+                    .insert(txn)
+                    .await?;
 
                     Ok(true)
                 })
@@ -194,7 +199,10 @@ impl JobDefineService {
     }
 
     // 运行一次任务, 根据参数每次
-    pub async fn run(req: JobDefineRunRequest, user_id: i64) -> Result<JobDefineRunResponse, ServiceError> {
+    pub async fn run(
+        req: JobDefineRunRequest,
+        user_id: i64,
+    ) -> Result<JobDefineRunResponse, ServiceError> {
         let id = {
             let id_gen = GLOBAL_IDGEN.lock().unwrap();
             id_gen.next_id().unwrap()
@@ -223,7 +231,6 @@ impl JobDefineService {
             .one(&txn)
             .await?
             .ok_or_else(|| ServiceError::NotFoundError("Job param not found".to_string()))?;
-
 
         // 插入新的 job_task 记录
         let new_job_task = job_task::ActiveModel {
@@ -374,4 +381,23 @@ impl JobDefineService {
 
         Ok(true)
     }
+
+    pub async fn get_cookie(
+        req: JobDefineCookieRequest,
+    ) -> Result<JobDefineCookieResponse, ServiceError> {
+        // 查询job_param
+        let jpa = JobParam::find()
+            .filter(job_param::Column::JobDefineId.eq(req.job_define_id))
+            .one(db::conn())
+            .await?
+            .ok_or_else(|| ServiceError::NotFoundError("Job param not found".to_string()))?;
+    
+        // 返回一个复合DTO
+        let dto = JobDefineCookieResponse {
+            wt2_cookie: jpa.wt2_cookie.unwrap_or_default(),
+        };
+    
+        Ok(dto)
+    }
 }
+

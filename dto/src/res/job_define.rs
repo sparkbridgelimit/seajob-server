@@ -42,3 +42,8 @@ pub struct JobDefineRunResponse {
     // 运行次数
     pub target_num: i32,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct JobDefineCookieResponse {
+    pub wt2_cookie: String,
+}
