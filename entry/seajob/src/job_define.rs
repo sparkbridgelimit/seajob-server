@@ -6,7 +6,6 @@ use seajob_dto::req::job_define::{JobDefineCookieRequest, JobDefineCreateRequest
 use seajob_service::job_define::JobDefineService;
 
 // DONE: 获取用户的所有投递计划
-// #[get("/user/{user_id}")]
 #[post("/list")]
 pub async fn all_job_define(user_context: Authenticate) -> Result<HttpResponse, Error> {
     match JobDefineService::find_all_by_user(user_context.user_id).await {

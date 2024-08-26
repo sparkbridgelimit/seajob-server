@@ -20,7 +20,8 @@ fn job_define_routes(cfg: &mut web::ServiceConfig) {
         .service(job_define::update_job_define)
         .service(job_define::delete_job_define)
         .service(job_define::run)
-        .service(job_define::save_cookie);
+        .service(job_define::save_cookie)
+        .service(job_define::get_cookie);
 }
 
 fn job_task(cfg: &mut web::ServiceConfig) {
