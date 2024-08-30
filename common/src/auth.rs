@@ -1,18 +1,18 @@
-use std::env;
-use std::future::Future;
-use std::pin::Pin;
-use actix_web::{Error, error, HttpRequest, HttpResponse, ResponseError};
+use crate::auth;
+use crate::redis_client::multiplexed_conn;
 use actix_web::dev::Payload;
-use jsonwebtoken::{Algorithm, DecodingKey, TokenData, Validation, errors::Error as JwtError};
+use actix_web::{HttpRequest, HttpResponse, ResponseError};
+use jsonwebtoken::{errors::Error as JwtError, Algorithm, DecodingKey, TokenData, Validation};
 use once_cell::sync::Lazy;
 use sea_orm::prelude::async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use crate::auth;
-use crate::redis_client::multiplexed_conn;
+use std::env;
+use std::future::Future;
+use std::marker::PhantomData;
+use std::pin::Pin;
 
-pub static JWT_SECRET_KEY: Lazy<String> = Lazy::new(|| {
-    env::var("JWT_SECRET_KEY").unwrap_or("local-secret-key".parse().unwrap())
-});
+pub static JWT_SECRET_KEY: Lazy<String> =
+    Lazy::new(|| env::var("JWT_SECRET_KEY").unwrap_or("local-secret-key".parse().unwrap()));
 
 // 定义错误类型
 #[derive(Debug, thiserror::Error)]
@@ -33,13 +33,11 @@ pub struct ErrorResponse {
 impl ResponseError for CustomError {
     fn error_response(&self) -> HttpResponse {
         match self {
-            CustomError::Unauthorized(msg) => {
-                HttpResponse::Ok().json(ErrorResponse {
-                    success: false,
-                    error_code: 401,
-                    error_message: msg.clone(),
-                })
-            }
+            CustomError::Unauthorized(msg) => HttpResponse::Ok().json(ErrorResponse {
+                success: false,
+                error_code: 401,
+                error_message: msg.clone(),
+            }),
         }
     }
 }
@@ -53,17 +51,65 @@ pub struct Claims {
 
 impl Claims {
     pub fn new(id: i64, exp: usize) -> Self {
-        Self {
-            user_id: id,
-            exp,
-        }
+        Self { user_id: id, exp }
+    }
+}
+
+// 定义角色的 Trait
+pub trait Role: Send + Sync + 'static {
+    fn role_name() -> &'static str;
+}
+
+pub struct AdminRole;
+pub struct UserRole;
+
+impl Role for AdminRole {
+    fn role_name() -> &'static str {
+        "admin"
+    }
+}
+
+impl Role for UserRole {
+    fn role_name() -> &'static str {
+        "user"
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Authenticate {
+pub struct Authenticate<R: RoleList> {
     pub user_id: i64,
+    pub role_codes: Vec<String>, // 支持多个角色
+    _marker: PhantomData<R>,
 }
+
+// RoleList Trait 用于表示角色列表
+pub trait RoleList: Send + Sync + 'static {
+    fn required_roles() -> Vec<&'static str>;
+    fn has_role(user_roles: &[String]) -> bool;
+}
+
+// 为单个角色实现 RoleList
+impl<T: Role> RoleList for T {
+    fn required_roles() -> Vec<&'static str> {
+        vec![T::role_name()]
+    }
+
+    fn has_role(user_roles: &[String]) -> bool {
+        user_roles.contains(&T::role_name().to_string())
+    }
+}
+
+// 为两个角色组合实现 RoleList
+impl<T1: Role, T2: Role> RoleList for (T1, T2) {
+    fn required_roles() -> Vec<&'static str> {
+        vec![T1::role_name(), T2::role_name()]
+    }
+
+    fn has_role(user_roles: &[String]) -> bool {
+        user_roles.contains(&T1::role_name().to_string()) || user_roles.contains(&T2::role_name().to_string())
+    }
+}
+
 
 pub async fn get_user_from_redis(user_id: i64) -> Option<String> {
     let mut m_conn = multiplexed_conn().await;
@@ -79,6 +125,27 @@ pub async fn get_user_from_redis(user_id: i64) -> Option<String> {
         })
 }
 
+async fn get_roles_from_redis(user_id: i64, required_roles: &[&str]) -> Option<Vec<String>> {
+    let mut m_conn = multiplexed_conn().await;
+
+    // 使用 Redis MGET 命令按需获取用户的指定角色
+    let roles_keys: Vec<String> = required_roles
+        .iter()
+        .map(|role| format!("user:{}:role:{}", user_id, role))
+        .collect();
+
+    let roles: Vec<Option<String>> = redis::cmd("MGET")
+        .arg(roles_keys)
+        .query_async(&mut m_conn)
+        .await
+        .unwrap_or_else(|e| {
+            eprintln!("无法从 Redis 获取用户角色: {}", e);
+            vec![]
+        });
+
+    Some(roles.into_iter().filter_map(|r| r).collect())
+}
+
 pub fn validate_token(token: &str) -> Result<TokenData<Claims>, JwtError> {
     let validation = Validation::new(Algorithm::HS256);
     let key = DecodingKey::from_secret(JWT_SECRET_KEY.as_ref());
@@ -86,45 +153,65 @@ pub fn validate_token(token: &str) -> Result<TokenData<Claims>, JwtError> {
     Ok(data)
 }
 
-async fn validate_user(user_id: i64) -> Result<Authenticate, Error> {
+async fn validate_user<R: RoleList>(user_id: i64) -> Result<Authenticate<R>, CustomError> {
     // 从 Redis 中获取用户数据的 JSON 字符串
-    let user_json = get_user_from_redis(user_id).await
-        .ok_or_else(|| error::ErrorUnauthorized("Invalid user in Redis"))?;
+    let user_json = get_user_from_redis(user_id)
+        .await
+        .ok_or_else(|| CustomError::Unauthorized("Failed to get user from Redis".into()))?;
+
+    let required_roles = R::required_roles();
+    let user_roles = get_roles_from_redis(user_id, &required_roles)
+        .await
+        .ok_or_else(|| CustomError::Unauthorized("Failed to get user roles from Redis".into()))?;
 
     // 尝试将 JSON 字符串反序列化为 UserData 结构体
-    let user_data = serde_json::from_str::<Authenticate>(&user_json)
-        .map_err(|e| {
-            eprintln!("解析 Redis 中的用户数据失败: {}", e);
-            error::ErrorInternalServerError("Failed to parse user data")
-        })?;
+    let user_data = serde_json::from_str::<Authenticate<R>>(&user_json).map_err(|e| {
+        eprintln!("Failed to deserialize user data: {}", e);
+        CustomError::Unauthorized("Invalid user data in Redis".into())
+    })?;
 
-    Ok(user_data)
+    // 校验用户是否有权限
+    if R::has_role(&user_roles) {
+        Ok(Authenticate {
+            user_id: user_data.user_id,
+            role_codes: user_roles,
+            _marker: PhantomData::<R>,
+        })
+    } else {
+        Err(CustomError::Unauthorized("Insufficient permissions".into()))
+    }
+
 }
 
 #[async_trait(? Send)]
-impl actix_web::FromRequest for Authenticate {
+impl<R: RoleList> actix_web::FromRequest for Authenticate<R> {
     type Error = CustomError;
-    type Future = Pin<Box<dyn Future<Output=Result<Self, Self::Error>>>>;
+    type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
         let req = req.clone();
         Box::pin(async move {
-            let auth_header = req.headers().get("Authorization")
+            // 提取 Authorization 头部
+            let auth_header = req
+                .headers()
+                .get("Authorization")
                 .ok_or_else(|| CustomError::Unauthorized("Authorization Not Found".into()))?;
 
+            // 提取 token
             let token = auth_header
                 .to_str()
                 .map_err(|_| CustomError::Unauthorized("Invalid Authorization".into()))?
                 .strip_prefix("Bearer ")
                 .ok_or_else(|| CustomError::Unauthorized("Invalid Authorization".into()))?;
 
-            let data = auth::validate_token(token)
-                .map_err(|e| {
-                    eprintln!("{}", e);
-                    CustomError::Unauthorized("Invalid Authorization".into())
-                })?;
+            // 校验token
+            let data = auth::validate_token(token).map_err(|e| {
+                eprintln!("{}", e);
+                CustomError::Unauthorized("Invalid Authorization".into())
+            })?;
 
-            validate_user(data.claims.user_id).await.map_err(|_| CustomError::Unauthorized("Invalid user in Redis".into()))
+            // 校验用户是否在 Redis 中并检查权限
+            validate_user::<R>(data.claims.user_id).await
         })
     }
 }

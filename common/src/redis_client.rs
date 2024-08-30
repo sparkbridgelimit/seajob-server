@@ -25,7 +25,6 @@ pub async fn init_redis() {
         .query_async(&mut conn)
         .await
         .unwrap_or_else(|e| panic!("Redis 连接测试失败：{}", e));
-
     let _ = REDIS_CLIENT.set(client);
 }
 

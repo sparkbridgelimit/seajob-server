@@ -1,13 +1,13 @@
 use actix_web::{post, web, Error, HttpResponse};
 use log::error;
-use seajob_common::auth::Authenticate;
+use seajob_common::auth::{Authenticate, UserRole};
 use seajob_common::response::{ApiErr, ApiResponse};
 use seajob_dto::req::job_define::{JobDefineCookieRequest, JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest, JobDefineRunRequest, JobDefineSaveCookieRequest, JobDefineUpdateRequest};
 use seajob_service::job_define::JobDefineService;
 
 // DONE: 获取用户的所有投递计划
 #[post("/list")]
-pub async fn all_job_define(user_context: Authenticate) -> Result<HttpResponse, Error> {
+pub async fn all_job_define(user_context: Authenticate<UserRole>) -> Result<HttpResponse, Error> {
     match JobDefineService::find_all_by_user(user_context.user_id).await {
         Ok(job_define_res) => {
             let response = ApiResponse::success(job_define_res);
@@ -25,7 +25,7 @@ pub async fn all_job_define(user_context: Authenticate) -> Result<HttpResponse, 
 #[post("/create")]
 pub async fn create_job_define(
     json: web::Json<JobDefineCreateRequest>,
-    user_context: Authenticate,
+    user_context: Authenticate<UserRole>,
 ) -> Result<HttpResponse, Error> {
     let params = json.into_inner();
     match JobDefineService::create(params, user_context.user_id).await {
@@ -41,7 +41,7 @@ pub async fn create_job_define(
 #[post("/detail")]
 pub async fn query_detail(
     json: web::Json<JobDefineDetailRequest>,
-    user_context: Authenticate,
+    user_context: Authenticate<UserRole>,
 ) -> Result<HttpResponse, Error> {
     let params = json.into_inner();
     match JobDefineService::detail(params, user_context.user_id).await {
@@ -57,7 +57,7 @@ pub async fn query_detail(
 #[post("/get_cookie")]
 pub async fn get_cookie(
     json: web::Json<JobDefineCookieRequest>,
-    _: Authenticate,
+    _: Authenticate<UserRole>,
 ) -> Result<HttpResponse, Error> {
     let params = json.into_inner();
     match JobDefineService::get_cookie(params).await {
@@ -73,6 +73,7 @@ pub async fn get_cookie(
 #[post("/update")]
 pub async fn update_job_define(
     json: web::Json<JobDefineUpdateRequest>,
+    _: Authenticate<UserRole>,
 ) -> Result<HttpResponse, Error> {
     let params = json.into_inner();
     match JobDefineService::update(params).await {
@@ -103,9 +104,9 @@ pub async fn delete_job_define(
 }
 
 #[post("/run")]
-pub async fn run(user_context: Authenticate, json: web::Json<JobDefineRunRequest>) -> Result<HttpResponse, Error> {
+pub async fn run(user: Authenticate<UserRole>, json: web::Json<JobDefineRunRequest>) -> Result<HttpResponse, Error> {
     let params = json.into_inner();
-    match JobDefineService::run(params, user_context.user_id).await {
+    match JobDefineService::run(params, user.user_id).await {
         Ok(data) => {
             let response = ApiResponse::success(data);
             Ok(HttpResponse::Ok().json(response))
@@ -119,7 +120,7 @@ pub async fn run(user_context: Authenticate, json: web::Json<JobDefineRunRequest
 }
 
 #[post("/cookie")]
-pub async fn save_cookie(json: web::Json<JobDefineSaveCookieRequest>) -> Result<HttpResponse, Error> {
+pub async fn save_cookie(json: web::Json<JobDefineSaveCookieRequest>, _: Authenticate<UserRole>) -> Result<HttpResponse, Error> {
     match JobDefineService::save_cookie(json.into_inner()).await {
         Ok(data) => {
             let response = ApiResponse::success(data);

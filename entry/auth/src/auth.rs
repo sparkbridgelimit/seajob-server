@@ -1,12 +1,12 @@
 use actix_web::{get, Error, HttpResponse, post, web};
 use log::error;
-use seajob_common::auth::Authenticate;
+use seajob_common::auth::{Authenticate, UserRole};
 use seajob_common::response::ApiResponse;
 use seajob_dto::req::auth::{SignInPayload, SignUpRequest};
 use seajob_service::auth;
 
 #[get("/check")]
-async fn check(_user: Authenticate) -> Result<HttpResponse, Error> {
+async fn check(_user: Authenticate<UserRole>) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok()
         .append_header(("x-user-id", _user.user_id))
         .append_header(("tenant_id", "seajob"))
@@ -44,7 +44,7 @@ async fn sign_in(json: web::Json<SignInPayload>) -> Result<HttpResponse, Error> 
 }
 
 #[post("/sign_out")]
-async fn sign_out(user: Authenticate) -> Result<HttpResponse, Error> {
+async fn sign_out(user: Authenticate<UserRole>) -> Result<HttpResponse, Error> {
         match auth::sign_out(user.user_id).await {
         Ok(_) => {
             let response = ApiResponse::success_only();

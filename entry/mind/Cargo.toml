@@ -3,10 +3,6 @@ name = "mind-server"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "mind-server"
-path = "src/main.rs"
-
 [dependencies]
 seajob-service = { path = "../../service" }
 seajob-common = { path = "../../common" }

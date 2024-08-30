@@ -1,9 +1,12 @@
-use bcrypt::{DEFAULT_COST, hash, verify};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::Utc;
-use jsonwebtoken::{Algorithm, encode, EncodingKey, Header};
+use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use redis::AsyncCommands;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, FromQueryResult, QueryFilter, QuerySelect, TransactionTrait};
 use sea_orm::ActiveValue::Set;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, EntityTrait, FromQueryResult, QueryFilter, QuerySelect,
+    TransactionTrait,
+};
 use serde::{Deserialize, Serialize};
 
 use seajob_common::auth::{Claims, JWT_SECRET_KEY};
@@ -12,7 +15,7 @@ use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use seajob_common::redis_client::multiplexed_conn;
 use seajob_dto::req::auth::{SignInPayload, SignUpRequest};
 use seajob_dto::res::auth::{SignInResponse, SignUpResponse};
-use seajob_entity::{account, user_define};
+use seajob_entity::{account, member::user_role, user_define};
 
 use crate::err::ServiceError;
 
@@ -25,9 +28,13 @@ pub fn create_jwt(id: i64) -> String {
 
     let header = Header::new(Algorithm::HS256);
     let claims = Claims::new(id, expiration as usize);
-    jsonwebtoken::encode(&header, &claims, &EncodingKey::from_secret(JWT_SECRET_KEY.as_ref()))
-        .map(|s| format!("Bearer {}", s))
-        .unwrap()
+    jsonwebtoken::encode(
+        &header,
+        &claims,
+        &EncodingKey::from_secret(JWT_SECRET_KEY.as_ref()),
+    )
+    .map(|s| format!("Bearer {}", s))
+    .unwrap()
 }
 
 #[derive(FromQueryResult)]
@@ -54,7 +61,9 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
 
                 // 如果重复直接返回ServiceError
                 if existing_account.is_some() {
-                    return Err(ServiceError::ConflictError("Username already exists".into()));
+                    return Err(ServiceError::ConflictError(
+                        "Username already exists".into(),
+                    ));
                 }
 
                 // 如果 accounts 中没有记录, 创建user_define、account记录
@@ -65,8 +74,8 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
                     create_time: Default::default(),
                     update_time: Default::default(),
                 }
-                    .insert(txn)
-                    .await?;
+                .insert(txn)
+                .await?;
 
                 // 对密码进行哈希处理
                 let hashed_password = hash(&params.password, DEFAULT_COST)
@@ -83,7 +92,9 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
                     create_time: Set(Some(Utc::now())),
                     update_time: Set(Some(Utc::now())),
                     ..Default::default()
-                }.insert(txn).await?;
+                }
+                .insert(txn)
+                .await?;
 
                 Ok(true)
             })
@@ -101,21 +112,41 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(JWT_SECRET_KEY.as_ref()),
-    ).map_err(|e| ServiceError::BizError(e.to_string()))?;
+    )
+    .map_err(|e| ServiceError::BizError(e.to_string()))?;
 
-    let cache_user_data = CachedUserData {
-        user_id
-    };
+    let cache_user_data = CachedUserData { user_id };
 
     // 将 用户信息 存入 Redis
     let mut redis_conn = multiplexed_conn().await;
-    redis_conn
-        .set_ex(format!("user:{}", user_id), serde_json::to_string(&cache_user_data).unwrap(), 3600 * 24)
+
+    let mut pipeline = redis::pipe();
+
+    pipeline.set_ex(
+        format!("user:{}", user_id),
+        serde_json::to_string(&cache_user_data).unwrap(),
+        3600 * 24,
+    );
+
+    let user_roles = user_role::Entity::find()
+        .filter(user_role::Column::UserId.eq(user_id))
+        .all(db::conn())
+        .await?;
+
+    for user_role in user_roles {
+        pipeline.sadd(format!("user:{}:role:{}", user_role.user_id, user_role.role_code), user_role.role_id);
+    }
+
+    pipeline
+        .query_async(&mut redis_conn)
         .await
         .map_err(|e| ServiceError::SystemError(e.to_string()))?;
 
     // 返回token
-    Ok(SignUpResponse { token, exp_at: claims.exp })
+    Ok(SignUpResponse {
+        token,
+        exp_at: claims.exp,
+    })
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -130,14 +161,18 @@ pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceErr
         .filter(account::Column::ProviderType.eq("credentials"))
         .one(db::conn())
         .await?
-        .ok_or(ServiceError::BizError("Invalid username or password".into()))?;
+        .ok_or(ServiceError::BizError(
+            "Invalid username or password".into(),
+        ))?;
 
     // 比对密码是否正确
     let is_valid = verify(&params.password, &account.access_token)
         .map_err(|_| ServiceError::BizError("Password verification failed".into()))?;
 
     if !is_valid {
-        return Err(ServiceError::BizError("Invalid username or password".into()));
+        return Err(ServiceError::BizError(
+            "Invalid username or password".into(),
+        ));
     }
 
     // 生成 JWT Token
@@ -150,22 +185,44 @@ pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceErr
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(JWT_SECRET_KEY.as_ref()),
-    ).map_err(|e| ServiceError::BizError(e.to_string()))?;
+    )
+    .map_err(|e| ServiceError::BizError(e.to_string()))?;
 
     let cache_user_data = CachedUserData {
-        user_id: account.user_id
+        user_id: account.user_id,
     };
+
     // 将 用户信息 存入 Redis
     let mut redis_conn = multiplexed_conn().await;
-    redis_conn
-        .set_ex(format!("user:{}", account.user_id), serde_json::to_string(&cache_user_data).unwrap(), 3600 * 24)
+
+    let mut pipeline = redis::pipe();
+
+    pipeline.set_ex(
+        format!("user:{}", account.user_id),
+        serde_json::to_string(&cache_user_data).unwrap(),
+        3600 * 24,
+    );
+
+    let user_roles = user_role::Entity::find()
+        .filter(user_role::Column::UserId.eq(account.user_id))
+        .all(db::conn())
+        .await?;
+
+    for user_role in user_roles {
+        pipeline.sadd(format!("user:{}:role:{}", user_role.user_id, user_role.role_code), user_role.role_id);
+    }
+
+    pipeline
+        .query_async(&mut redis_conn)
         .await
         .map_err(|e| ServiceError::SystemError(e.to_string()))?;
 
     // 返回token
-    Ok(SignInResponse { token, exp_at: claims.exp })
+    Ok(SignInResponse {
+        token,
+        exp_at: claims.exp,
+    })
 }
-
 
 // TODO: 登出
 pub async fn sign_out(user_id: i64) -> Result<bool, ServiceError> {
@@ -180,7 +237,9 @@ pub async fn sign_out(user_id: i64) -> Result<bool, ServiceError> {
     if result == 1 {
         Ok(true)
     } else {
-        Err(ServiceError::SystemError("Sign out failed: token not found".into()))
+        Err(ServiceError::SystemError(
+            "Sign out failed: token not found".into(),
+        ))
     }
 }
 
