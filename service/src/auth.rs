@@ -16,9 +16,8 @@ use seajob_common::redis_client::multiplexed_conn;
 use seajob_dto::req::auth::{SignInPayload, SignUpRequest};
 use seajob_dto::res::auth::{SignInResponse, SignUpResponse};
 use seajob_entity::{account, member::user_role, user_define};
-
+use seajob_entity::member::role;
 use crate::err::ServiceError;
-use crate::role::RoleService;
 
 /// 创建token
 pub fn create_jwt(id: i64) -> String {
@@ -34,8 +33,8 @@ pub fn create_jwt(id: i64) -> String {
         &claims,
         &EncodingKey::from_secret(JWT_SECRET_KEY.as_ref()),
     )
-    .map(|s| format!("Bearer {}", s))
-    .unwrap()
+        .map(|s| format!("Bearer {}", s))
+        .unwrap()
 }
 
 #[derive(FromQueryResult)]
@@ -75,8 +74,8 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
                     create_time: Default::default(),
                     update_time: Default::default(),
                 }
-                .insert(txn)
-                .await?;
+                    .insert(txn)
+                    .await?;
 
                 // 对密码进行哈希处理
                 let hashed_password = hash(&params.password, DEFAULT_COST)
@@ -94,24 +93,26 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
                     update_time: Set(Some(Utc::now())),
                     ..Default::default()
                 }
-                .insert(txn)
-                .await?;
+                    .insert(txn)
+                    .await?;
 
                 let code = "user";
-                let role = RoleService::query_by_code(code)
+                let role = role::Entity::find()
+                    .filter(role::Column::Code.eq(code))
+                    .one(txn)
                     .await?
                     .ok_or_else(|| ServiceError::NotFoundError("Role not found".into()))?;
 
                 user_role::ActiveModel {
                     id: Default::default(),
                     user_id: Set(user_id),
-                    role_id: Default::default(),
+                    role_id: Set(role.id),
                     role_code: Set(role.code),
                     create_time: Default::default(),
                     update_time: Default::default(),
                 }
-                .insert(db::conn())
-                .await?;
+                    .insert(txn)
+                    .await?;
                 Ok(true)
             })
         })
@@ -129,7 +130,7 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
         &claims,
         &EncodingKey::from_secret(JWT_SECRET_KEY.as_ref()),
     )
-    .map_err(|e| ServiceError::BizError(e.to_string()))?;
+        .map_err(|e| ServiceError::BizError(e.to_string()))?;
 
     let cache_user_data = CachedUserData { user_id };
 
@@ -204,7 +205,7 @@ pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceErr
         &claims,
         &EncodingKey::from_secret(JWT_SECRET_KEY.as_ref()),
     )
-    .map_err(|e| ServiceError::BizError(e.to_string()))?;
+        .map_err(|e| ServiceError::BizError(e.to_string()))?;
 
     let cache_user_data = CachedUserData {
         user_id: account.user_id,
