@@ -40,4 +40,13 @@ impl RoleService {
             .await
             .map_err(|e| ServiceError::DbError(e))
     }
+
+    /// 根据code查询角色详情
+    pub async fn query_by_code(code: &str) -> Result<Option<role::Model>, ServiceError> {
+        role::Entity::find()
+            .filter(role::Column::Code.eq(code))
+            .one(db::conn())
+            .await
+            .map_err(|e| ServiceError::DbError(e))
+    }
 }

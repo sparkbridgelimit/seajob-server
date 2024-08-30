@@ -1,0 +1,276 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'seajob-server'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=seajob-server",
+          "--package=seajob-server"
+        ],
+        "filter": {
+          "name": "seajob-server",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'seajob-server'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=seajob-server",
+          "--package=seajob-server"
+        ],
+        "filter": {
+          "name": "seajob-server",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'seajob_common'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=seajob-common"
+        ],
+        "filter": {
+          "name": "seajob_common",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug benchmark 'idgen_benchmark'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bench=idgen_benchmark",
+          "--package=seajob-common"
+        ],
+        "filter": {
+          "name": "idgen_benchmark",
+          "kind": "bench"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'seajob_dto'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=seajob-dto"
+        ],
+        "filter": {
+          "name": "seajob_dto",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'seajob_service'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=seajob-service"
+        ],
+        "filter": {
+          "name": "seajob_service",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'seajob_entity'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=seajob-entity"
+        ],
+        "filter": {
+          "name": "seajob_entity",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'auth-server'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=auth-server",
+          "--package=auth-server"
+        ],
+        "filter": {
+          "name": "auth-server",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "DATABASE_URL": "postgres://seajob:seajobHm3hd@localhost:6433/seajob",
+        "JWT_SECRET_KEY": "local-secret-key",
+        "REDIS_URL": "redis://localhost:6379/0",
+        "RUST_BACKTRACE": "full"
+      }
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'auth-server'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=auth-server",
+          "--package=auth-server"
+        ],
+        "filter": {
+          "name": "auth-server",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'mind-server'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=mind-server",
+          "--package=mind-server"
+        ],
+        "filter": {
+          "name": "mind-server",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'mind-server'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=mind-server",
+          "--package=mind-server"
+        ],
+        "filter": {
+          "name": "mind-server",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'migration'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=migration"
+        ],
+        "filter": {
+          "name": "migration",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'migration'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=migration",
+          "--package=migration"
+        ],
+        "filter": {
+          "name": "migration",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'migration'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=migration",
+          "--package=migration"
+        ],
+        "filter": {
+          "name": "migration",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

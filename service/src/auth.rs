@@ -18,6 +18,7 @@ use seajob_dto::res::auth::{SignInResponse, SignUpResponse};
 use seajob_entity::{account, member::user_role, user_define};
 
 use crate::err::ServiceError;
+use crate::role::RoleService;
 
 /// 创建token
 pub fn create_jwt(id: i64) -> String {
@@ -96,6 +97,21 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
                 .insert(txn)
                 .await?;
 
+                let code = "user";
+                let role = RoleService::query_by_code(code)
+                    .await?
+                    .ok_or_else(|| ServiceError::NotFoundError("Role not found".into()))?;
+
+                user_role::ActiveModel {
+                    id: Default::default(),
+                    user_id: Set(user_id),
+                    role_id: Default::default(),
+                    role_code: Set(role.code),
+                    create_time: Default::default(),
+                    update_time: Default::default(),
+                }
+                .insert(db::conn())
+                .await?;
                 Ok(true)
             })
         })
@@ -117,7 +133,6 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
 
     let cache_user_data = CachedUserData { user_id };
 
-    // 将 用户信息 存入 Redis
     let mut redis_conn = multiplexed_conn().await;
 
     let mut pipeline = redis::pipe();
@@ -134,7 +149,10 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
         .await?;
 
     for user_role in user_roles {
-        pipeline.sadd(format!("user:{}:role:{}", user_role.user_id, user_role.role_code), user_role.role_id);
+        pipeline.sadd(
+            format!("user:{}:role:{}", user_role.user_id, user_role.role_code),
+            user_role.role_id,
+        );
     }
 
     pipeline
@@ -192,7 +210,6 @@ pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceErr
         user_id: account.user_id,
     };
 
-    // 将 用户信息 存入 Redis
     let mut redis_conn = multiplexed_conn().await;
 
     let mut pipeline = redis::pipe();
@@ -209,7 +226,10 @@ pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceErr
         .await?;
 
     for user_role in user_roles {
-        pipeline.sadd(format!("user:{}:role:{}", user_role.user_id, user_role.role_code), user_role.role_id);
+        pipeline.sadd(
+            format!("user:{}:role:{}", user_role.user_id, user_role.role_code),
+            user_role.role_id,
+        );
     }
 
     pipeline
