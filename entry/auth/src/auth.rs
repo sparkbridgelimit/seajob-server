@@ -13,6 +13,12 @@ async fn check(_user: Authenticate<UserRole>) -> Result<HttpResponse, Error> {
         .json(ApiResponse::success_only()))
 }
 
+#[post("/check_role")]
+async fn check_role(user: Authenticate<UserRole>) -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::Ok()
+        .json(ApiResponse::success(user)))
+}
+
 #[post("/sign_up")]
 async fn sign_up(json: web::Json<SignUpRequest>) -> Result<HttpResponse, Error> {
     match auth::sign_up(json.into_inner()).await {

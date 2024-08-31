@@ -207,19 +207,17 @@ pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceErr
     )
         .map_err(|e| ServiceError::BizError(e.to_string()))?;
 
-    let cache_user_data = CachedUserData {
-        user_id: account.user_id,
-    };
-
     let mut redis_conn = multiplexed_conn().await;
 
     let mut pipeline = redis::pipe();
 
+    let expire_time = 3600 * 24;
+
     pipeline.set_ex(
-        format!("user:{}", account.user_id),
-        serde_json::to_string(&cache_user_data).unwrap(),
-        3600 * 24,
-    );
+        format!("user:{}:token", account.user_id),
+        token.clone(),
+        expire_time,
+    ).ignore();
 
     let user_roles = user_role::Entity::find()
         .filter(user_role::Column::UserId.eq(account.user_id))
@@ -228,10 +226,12 @@ pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceErr
 
     for user_role in user_roles {
         pipeline.sadd(
-            format!("user:{}:role:{}", user_role.user_id, user_role.role_code),
-            user_role.role_id,
-        );
+            format!("user:{}:roles", user_role.user_id),
+            user_role.role_code,
+        ).ignore();
     }
+
+    pipeline.expire(format!("user:{}:roles", account.user_id), expire_time as i64).ignore();
 
     pipeline
         .query_async(&mut redis_conn)

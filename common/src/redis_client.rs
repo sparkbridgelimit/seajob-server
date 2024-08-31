@@ -1,41 +1,28 @@
+use deadpool_redis::{Config, Connection, Pool, Runtime};
 use std::env;
 use std::sync::OnceLock;
 
-use redis::aio::{MultiplexedConnection};
-use redis::Client;
+static REDIS_POOL: OnceLock<Pool> = OnceLock::new();
 
-static REDIS_CLIENT: OnceLock<Client> = OnceLock::new();
-
-/// 初始化 Redis 连接
-pub async fn init_redis() {
+/// 初始化 Redis 连接池
+pub async fn init_redis_pool() {
     // 获取 Redis URL
     let redis_url = env::var("REDIS_URL").expect("缺失 REDIS_URL 环境变量");
 
-    // 创建 Redis 客户端
-    let client = Client::open(redis_url)
-        .unwrap_or_else(|e| panic!("无法创建 Redis 客户端：{}", e));
+    // 使用配置创建 Redis 连接池
+    let cfg = Config::from_url(redis_url);
 
-    // 测试连接
-    let mut conn = client
-        .get_multiplexed_async_connection()
-        .await
-        .unwrap_or_else(|e| panic!("Redis 连接失败：{}", e));
+    // 创建 Redis 连接池
+    let pool = cfg.create_pool(Some(Runtime::Tokio1)).expect("无法创建 Redis 连接池");
 
-    let _: () = redis::cmd("PING")
-        .query_async(&mut conn)
-        .await
-        .unwrap_or_else(|e| panic!("Redis 连接测试失败：{}", e));
-    let _ = REDIS_CLIENT.set(client);
+    // 设置全局的 Redis 连接池
+    REDIS_POOL.set(pool).expect("无法设置 Redis 连接池");
 }
 
 /// 获取多路复用Redis 连接
-pub async fn multiplexed_conn() -> MultiplexedConnection {
-    let client = REDIS_CLIENT
-        .get()
-        .unwrap_or_else(|| panic!("Redis 客户端未初始化"));
+pub async fn multiplexed_conn() -> Connection {
+    let pool = REDIS_POOL.get().expect("连接池未初始化");
+    let conn = pool.get().await.expect("无法获取 Redis 连接");
 
-    client
-        .get_multiplexed_async_connection()
-        .await
-        .unwrap_or_else(|e| panic!("无法获取 Redis 连接：{}", e))
+    conn
 }

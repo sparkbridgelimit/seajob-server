@@ -26,7 +26,7 @@ pub async fn start() -> std::io::Result<()> {
     // 初始化DB连接
     db::init_db().await;
     // 初始化redis连接
-    redis_client::init_redis().await;
+    redis_client::init_redis_pool().await;
 
     let state = AppState {};
 

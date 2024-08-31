@@ -14,6 +14,7 @@ pub fn need_auth_routes(cfg: &mut web::ServiceConfig) {
     // 登出
     cfg.service(auth::sign_out)
         .service(auth::check)
+        .service(auth::check_role)
         .service(activate::create)
         .service(activate::consume);
 }
