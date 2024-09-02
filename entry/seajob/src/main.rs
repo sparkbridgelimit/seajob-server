@@ -6,7 +6,6 @@ use env_logger::Env;
 use listenfd::ListenFd;
 
 use seajob_common::{db, redis_client};
-use seajob_service::entry::init_services;
 
 mod index;
 mod job_contacted;
@@ -21,7 +20,6 @@ struct AppState {}
 #[actix_web::main]
 pub async fn start() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
-    init_services();
 
     // 初始化DB连接
     db::init_db().await;

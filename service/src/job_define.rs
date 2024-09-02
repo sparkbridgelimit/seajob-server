@@ -1,8 +1,5 @@
 use sea_orm::ActiveValue::Set;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, QueryFilter, QueryOrder,
-    QuerySelect, TransactionTrait,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbBackend, EntityTrait, FromQueryResult, JsonValue, ModelTrait, QueryFilter, QuerySelect, Statement, TransactionTrait};
 
 use chrono::Utc;
 use seajob_common::db;
@@ -11,47 +8,45 @@ use seajob_dto::req::job_define::{
     JobDefineCookieRequest, JobDefineCreateRequest, JobDefineDelete, JobDefineDetailRequest,
     JobDefineRunRequest, JobDefineSaveCookieRequest, JobDefineUpdateRequest,
 };
-use seajob_dto::res::job_define::{
-    JobDefineCookieResponse, JobDefineDetailResponse, JobDefineRunResponse,
-};
-use seajob_entity::job_define::Model;
+use seajob_dto::res::job_define::{JobDefineCookieResponse, JobDefineDetailResponse, JobDefineRunResponse};
 use seajob_entity::prelude::{JobDefine, JobParam, JobPrefer};
 use seajob_entity::{job_define, job_param, job_prefer, job_task};
 
-use crate::crud_service::{CRUDService, CRUDServiceImpl};
 use crate::err::ServiceError;
-pub struct JobDefineService {
-    crud: CRUDServiceImpl<JobDefine>,
-}
+pub struct JobDefineService {}
 
 impl JobDefineService {
-    pub fn new() -> Self {
-        Self {
-            crud: CRUDServiceImpl::<JobDefine>::new(),
-        }
-    }
+    pub async fn find_all_by_user(user_id: i64) -> Result<Vec<JsonValue>, ServiceError> {
+        let sql = r#"
+            SELECT
+                jd.id,
+                jd.job_define_name,
+                jd.job_define_desc,
+                jd.total_apply,
+                jd.last_run_time,
+                jd.create_time,
+                jp.keyword,
+                jp.city_code,
+                jp.salary_range
+            FROM
+                job_define jd
+            LEFT JOIN job_prefer jp ON
+                jd.id = jp.job_define_id
+            WHERE
+                jd.user_id = $1
+            ORDER BY
+                jd.create_time DESC;
+        "#;
 
-    pub async fn find_by_id(
-        &self,
-        id: i64,
-    ) -> Result<Option<<JobDefine as EntityTrait>::Model>, DbErr> {
-        self.crud.find_by_id(id).await
-    }
-
-    pub async fn find_all(&self) -> Result<Vec<<JobDefine as EntityTrait>::Model>, DbErr> {
-        self.crud.find_all().await
-    }
-}
-
-impl JobDefineService {
-    pub async fn find_all_by_user(user_id: i64) -> Result<Vec<Model>, ServiceError> {
-        let list = JobDefine::find()
-            .filter(job_define::Column::UserId.eq(user_id))
-            .order_by_desc(job_define::Column::CreateTime)
+        let job_defines: Vec<JsonValue> = JsonValue::find_by_statement(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            sql,
+            vec![user_id.into()], // 将 user_id 作为查询参数传入
+        ))
             .all(db::conn())
             .await?;
 
-        Ok(list)
+        Ok(job_defines)
     }
 
     pub async fn create(req: JobDefineCreateRequest, user_id: i64) -> Result<bool, ServiceError> {
@@ -68,11 +63,13 @@ impl JobDefineService {
                         user_id: Set(user_id),
                         job_define_name: Set(req.job_define_name.unwrap_or_default()),
                         job_define_desc: Set(req.job_define_desc.unwrap_or_default()),
+                        total_apply: Set(0),
+                        last_run_time: Set(None),
                         create_time: Default::default(),
                         update_time: Default::default(),
                     }
-                    .insert(txn)
-                    .await?;
+                        .insert(txn)
+                        .await?;
 
                     // 创建 job_prefer
                     job_prefer::ActiveModel {
@@ -88,8 +85,8 @@ impl JobDefineService {
                         // 填充字段
                         ..Default::default()
                     }
-                    .insert(txn)
-                    .await?;
+                        .insert(txn)
+                        .await?;
 
                     // 创建 job_param
                     job_param::ActiveModel {
@@ -97,8 +94,8 @@ impl JobDefineService {
                         hello_text: Set(req.hello_text),
                         ..Default::default()
                     }
-                    .insert(txn)
-                    .await?;
+                        .insert(txn)
+                        .await?;
 
                     Ok(true)
                 })
@@ -391,12 +388,12 @@ impl JobDefineService {
             .one(db::conn())
             .await?
             .ok_or_else(|| ServiceError::NotFoundError("Job param not found".to_string()))?;
-    
+
         // 返回一个复合DTO
         let dto = JobDefineCookieResponse {
             wt2_cookie: jpa.wt2_cookie.unwrap_or_default(),
         };
-    
+
         Ok(dto)
     }
 }

@@ -8,6 +8,7 @@ name = "seajob_dto"
 path = "src/lib.rs"
 
 [dependencies]
+chrono = "0.4.38"
 serde = { version = "1.0.204", features = ["derive"] }
 validator = "0.18.1"
 validator_derive = "0.18.1"

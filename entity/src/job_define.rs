@@ -21,6 +21,12 @@ pub struct Model {
     #[sea_orm(comment = "投递计划描述")]
     pub job_define_desc: String,
 
+    #[sea_orm(comment = "总打招呼数")]
+    pub total_apply: i32,
+
+    #[sea_orm(comment = "上次运行时间")]
+    pub last_run_time: Option<DateTime<Utc>>,
+
     #[sea_orm(comment = "创建时间")]
     pub create_time: Option<DateTime<Utc>>,
 
