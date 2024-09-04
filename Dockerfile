@@ -12,7 +12,7 @@ RUN apk add --no-cache musl-dev pkgconfig openssl-dev git
 
 # Set the workdir and copy the source into it
 WORKDIR /app
-COPY seajob-server/ ./
+COPY ./ ./
 
 # Do a release build
 RUN cargo build --release

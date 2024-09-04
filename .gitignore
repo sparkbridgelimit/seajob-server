@@ -7,3 +7,6 @@
 /entry/seajob/target/
 /entry/auth/target/
 /entry/mind/target/
+.idea
+.vscode
+*.iml
