@@ -10,6 +10,7 @@ mod auth;
 mod router;
 mod index;
 mod activate;
+mod member;
 
 #[derive(Debug, Clone)]
 struct AppState {}

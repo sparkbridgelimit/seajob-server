@@ -8,3 +8,4 @@ pub mod resume;
 pub mod user_define;
 pub mod account;
 pub mod member;
+pub mod job_stats;

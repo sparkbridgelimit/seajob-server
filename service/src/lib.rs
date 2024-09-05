@@ -6,3 +6,4 @@ pub mod job_task;
 pub mod activate;
 pub mod role;
 pub mod user_role;
+pub mod member;
