@@ -1,11 +1,12 @@
+use chrono::Utc;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter};
 
 use seajob_common::db;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use seajob_dto::req::job_task::{JobTaskEnd, JobTaskError, JobTaskList, JobTaskLog, JobTaskStart};
-use seajob_entity::prelude::JobTask;
-use seajob_entity::{job_contacted, job_task};
+use seajob_entity::prelude::{JobDefine, JobTask};
+use seajob_entity::{job_contacted, job_define, job_task};
 
 use crate::err::ServiceError;
 
@@ -79,6 +80,25 @@ impl JobTaskService {
         }
         .insert(txn)
         .await?;
+
+        // 更改jobdefine的total_apply 和last_run_time
+        let jd = JobDefine::find_by_id(job_task.job_define_id)
+            .one(txn)
+            .await?
+            .ok_or_else(|| {
+                ServiceError::NotFoundError("Job define not found".to_string())
+            })?;
+
+        let total_apply = jd.total_apply;
+        let mut jd_active_model: job_define::ActiveModel = jd.into();
+
+        // 更新上一次运行时间
+        jd_active_model.last_run_time = Set(Option::from(Utc::now()));
+
+        // 更新岗位次数
+        jd_active_model.total_apply = Set(total_apply + 1);
+
+        jd_active_model.update(txn).await?;
 
         Ok(())
     }
