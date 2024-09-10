@@ -244,6 +244,7 @@ impl JobDefineService {
         new_job_task.insert(&txn).await?;
 
         let dto = JobDefineRunResponse {
+            job_task_id: id,
             job_define_id: req.job_define_id,
             job_define_name: jd.job_define_name,
             job_define_desc: jd.job_define_desc,

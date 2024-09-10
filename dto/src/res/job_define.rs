@@ -38,6 +38,7 @@ pub struct JobDefineDetailResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JobDefineRunResponse {
     // job_define
+    pub job_task_id: i64,
     pub job_define_id: i64,
     pub job_define_name: String,
     pub job_define_desc: String,
