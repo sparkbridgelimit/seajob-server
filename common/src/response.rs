@@ -1,5 +1,5 @@
 use serde::Serialize;
-use crate::err::{ErrorCode, ServiceError};
+use crate::err::ServiceError;
 
 #[derive(Serialize)]
 pub struct ApiResponse<T> {
@@ -58,11 +58,12 @@ impl ApiResponse<()> {
     }
 
     pub fn fail_from_service_error(err: ServiceError) -> Self {
+        let friendly_error = err.to_user_friendly_error();
         ApiResponse {
             success: false,
             data: None,
-            err_code: Some(err.error_code()),   // 从 ErrorCode trait 获取错误码
-            err_message: Some(err.to_string()), // 从错误枚举中获取错误消息
+            err_code: Some(friendly_error.err_code()),
+            err_message: Some(friendly_error.to_string()), // 返回用户友好的错误消息
         }
     }
 }

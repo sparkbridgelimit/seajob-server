@@ -50,3 +50,39 @@ impl ErrorCode for ServiceError {
         }
     }
 }
+
+#[derive(Error, Debug)]
+pub enum UserFriendlyError {
+    #[error("用户已存在")]
+    ConflictError { err_code: u32 },
+
+    #[error("系统错误，请稍后重试")]
+    SystemError { err_code: u32 },
+
+    #[error("其他错误: {message}")]
+    OtherError { err_code: u32, message: String },
+}
+
+impl UserFriendlyError {
+    pub fn err_code(&self) -> u32 {
+        match self {
+            UserFriendlyError::ConflictError { err_code } => *err_code,
+            UserFriendlyError::SystemError { err_code } => *err_code,
+            UserFriendlyError::OtherError { err_code, .. } => *err_code,
+        }
+    }
+}
+
+impl ServiceError {
+    /// 将 ServiceError 转换为 UserFriendlyError
+    pub fn to_user_friendly_error(&self) -> UserFriendlyError {
+        match self {
+            ServiceError::ConflictError(_) => UserFriendlyError::ConflictError { err_code: 409 },
+            ServiceError::SystemError(_) => UserFriendlyError::SystemError { err_code: 500 },
+            _ => UserFriendlyError::OtherError {
+                err_code: 520,
+                message: self.to_string(),
+            },
+        }
+    }
+}
