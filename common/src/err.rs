@@ -30,3 +30,23 @@ pub enum ServiceError {
     #[error("System error: {0}")]
     SystemError(String),
 }
+
+pub trait ErrorCode {
+    fn error_code(&self) -> u32;
+}
+
+impl ErrorCode for ServiceError {
+    fn error_code(&self) -> u32 {
+        match self {
+            ServiceError::Unauthorized(_) => 401,
+            ServiceError::DbError(_) => 500,
+            ServiceError::TransactionError(_) => 500,
+            ServiceError::ValidationError(_) => 400,
+            ServiceError::NotFoundError(_) => 404,
+            ServiceError::UnknownError(_) => 520,
+            ServiceError::ConflictError(_) => 409,
+            ServiceError::BizError(_) => 422,
+            ServiceError::SystemError(_) => 500,
+        }
+    }
+}

@@ -28,7 +28,7 @@ async fn sign_up(json: web::Json<SignUpRequest>) -> Result<HttpResponse, Error> 
         }
         Err(e) => {
             error!("Failed to sign up: {:?}", e);
-            let error_response = ApiResponse::fail();
+            let error_response = ApiResponse::fail_from_service_error(e);
             Ok(HttpResponse::Ok().json(error_response))
         }
     }
@@ -43,7 +43,7 @@ async fn sign_in(json: web::Json<SignInPayload>) -> Result<HttpResponse, Error> 
         }
         Err(e) => {
             error!("Failed to sign in: {:?}", e);
-            let error_response = ApiResponse::fail();
+            let error_response = ApiResponse::fail_from_service_error(e);
             Ok(HttpResponse::Ok().json(error_response))
         }
     }
@@ -57,8 +57,8 @@ async fn sign_out(user: Authenticate<UserRole>) -> Result<HttpResponse, Error> {
             Ok(HttpResponse::Ok().json(response))
         }
         Err(e) => {
-            error!("Failed to sign in: {:?}", e);
-            let error_response = ApiResponse::fail();
+            error!("Failed to sign out: {:?}", e);
+            let error_response = ApiResponse::fail_from_service_error(e);
             Ok(HttpResponse::Ok().json(error_response))
         }
     }

@@ -11,13 +11,13 @@ use serde::{Deserialize, Serialize};
 
 use seajob_common::auth::{Claims, JWT_SECRET_KEY};
 use seajob_common::db;
+use seajob_common::err::ServiceError;
 use seajob_common::id_gen::id_generator::GLOBAL_IDGEN;
 use seajob_common::redis_client::multiplexed_conn;
 use seajob_dto::req::auth::{SignInPayload, SignUpRequest};
 use seajob_dto::res::auth::{SignInResponse, SignUpResponse};
 use seajob_entity::{account, member::user_role, user_define};
 use seajob_entity::member::role;
-use crate::err::ServiceError;
 
 /// 创建token
 pub fn create_jwt(id: i64) -> String {
@@ -245,7 +245,6 @@ pub async fn sign_in(params: SignInPayload) -> Result<SignInResponse, ServiceErr
     })
 }
 
-// TODO: 登出
 pub async fn sign_out(user_id: i64) -> Result<bool, ServiceError> {
     let mut redis_conn = multiplexed_conn().await;
 
