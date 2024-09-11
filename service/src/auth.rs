@@ -139,7 +139,7 @@ pub async fn sign_up(params: SignUpRequest) -> Result<SignUpResponse, ServiceErr
     let mut pipeline = redis::pipe();
 
     pipeline.set_ex(
-        format!("user:{}", user_id),
+        format!("user:{}:token", user_id),
         serde_json::to_string(&cache_user_data).unwrap(),
         3600 * 24,
     );
