@@ -251,7 +251,7 @@ pub async fn sign_out(user_id: i64) -> Result<bool, ServiceError> {
 
     // 从 Redis 中删除用户的 token
     let result: i64 = redis_conn
-        .del(format!("user:{}", user_id))
+        .del(format!("user:{}:token", user_id))
         .await
         .map_err(|e| ServiceError::SystemError(e.to_string()))?;
 
