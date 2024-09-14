@@ -34,7 +34,7 @@ pub async fn start() -> std::io::Result<()> {
     // actix-web实例
     let mut server = HttpServer::new(move || {
         App::new()
-            .wrap(init_prom())
+            .wrap(init_prom("mind"))
             .wrap(
                 Cors::default()
                     .allowed_origin_fn(|_origin, _req_head| true) // 支持任何来源
