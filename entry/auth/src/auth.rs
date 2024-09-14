@@ -8,9 +8,7 @@ use seajob_service::auth;
 #[get("/check")]
 async fn check(_user: Authenticate<UserRole>) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok()
-        .append_header(("x-user-id", _user.user_id))
-        .append_header(("tenant_id", "seajob"))
-        .json(ApiResponse::success_only()))
+        .json(ApiResponse::success(true)))
 }
 
 #[post("/check_role")]

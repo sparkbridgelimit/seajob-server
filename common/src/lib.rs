@@ -5,3 +5,4 @@ pub mod redis_client;
 pub mod req;
 pub mod auth;
 pub mod err;
+pub mod metrics;
