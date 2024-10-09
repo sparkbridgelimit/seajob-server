@@ -1,5 +1,4 @@
 use crate::activate::ActivateService;
-use chrono::Utc;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use seajob_common::auth::validate_token;
@@ -20,16 +19,13 @@ impl TrialAccount {
     // 创建测试账号
     pub async fn create(days: i64) ->  Result<AccountInfo, ServiceError>  {
         // 1. 创建账号
-        // 账号格式: user+年月日+随机4位数
-        let now = Utc::now();
-        let date_str = now.format("%Y%m%d").to_string();
 
         // 生成4位随机数
         let mut rng = thread_rng();
         let random_number: u16 = rng.gen_range(1000..9999); // 生成1000-9999之间的随机数
 
         // 生成账号名称
-        let username = format!("user_{}_{:04}", date_str, random_number);
+        let username = format!("user_{:04}", random_number);
 
         // 生成随机密码
         let password: String = "password".to_string();
