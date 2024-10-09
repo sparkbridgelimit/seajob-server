@@ -12,6 +12,7 @@ mod router;
 mod index;
 mod activate;
 mod member;
+mod trial;
 
 #[derive(Debug, Clone)]
 struct AppState {}

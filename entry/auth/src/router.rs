@@ -1,4 +1,4 @@
-use crate::{activate, auth, member};
+use crate::{activate, auth, member, trial};
 use actix_web::web;
 
 
@@ -6,7 +6,8 @@ use actix_web::web;
 pub fn not_auth_routes(cfg: &mut web::ServiceConfig) {
     // 登陆, 注册
     cfg.service(auth::sign_up)
-        .service(auth::sign_in);
+        .service(auth::sign_in)
+        .service(trial::create);
 }
 
 // 需要鉴权的部分

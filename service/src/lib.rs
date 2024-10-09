@@ -7,3 +7,4 @@ pub mod activate;
 pub mod role;
 pub mod user_role;
 pub mod member;
+pub mod trial;

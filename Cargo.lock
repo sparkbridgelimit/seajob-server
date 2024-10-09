@@ -3163,6 +3163,7 @@ dependencies = [
  "jsonwebtoken",
  "log",
  "once_cell",
+ "rand",
  "redis",
  "sea-orm 0.12.15",
  "seajob-common",
