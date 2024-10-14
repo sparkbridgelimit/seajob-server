@@ -32,6 +32,7 @@ pub struct JobDefineDetailResponse {
     pub timeout: i32,
     pub wt2_cookie: String,
     pub hello_text: String,
+    pub filter_offline: bool,
 }
 
 
@@ -56,6 +57,7 @@ pub struct JobDefineRunResponse {
     pub hello_text: String,
     // 运行次数
     pub target_num: i32,
+    pub filter_offline: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

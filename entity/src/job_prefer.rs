@@ -43,6 +43,9 @@ pub struct Model {
     #[sea_orm(comment = "不想要的岗位")]
     pub exclude_job: String,
 
+    #[sea_orm(comment = "过滤不在线的岗位")]
+    pub filter_offline: bool,
+
     #[sea_orm(comment = "创建时间")]
     pub create_time: Option<DateTime<Utc>>,
 

@@ -82,7 +82,7 @@ impl JobDefineService {
                         key_kills: Set(serde_json::to_string(&req.key_kills).unwrap()),
                         exclude_company: Set(serde_json::to_string(&req.exclude_company).unwrap()),
                         exclude_job: Set(serde_json::to_string(&req.exclude_job).unwrap()),
-                        // 填充字段
+                        filter_offline: Set(req.filter_offline.unwrap_or_default()),
                         ..Default::default()
                     }
                         .insert(txn)
@@ -160,6 +160,9 @@ impl JobDefineService {
                     }
                     if let Some(exclude_job) = req.exclude_job {
                         jp.exclude_job = Set(serde_json::to_string(&exclude_job).unwrap());
+                    }
+                    if let Some(filter_offline) = req.filter_offline {
+                        jp.filter_offline = Set(filter_offline);
                     }
 
                     jp.update_time = Set(Utc::now().into());
@@ -254,6 +257,7 @@ impl JobDefineService {
             key_kills: jp.key_kills,
             exclude_company: jp.exclude_company,
             exclude_job: jp.exclude_job,
+            filter_offline: jp.filter_offline,
             interval: jpa.interval.unwrap_or_default(),
             timeout: jpa.timeout.unwrap_or_default(),
             wt2_cookie: jpa.wt2_cookie.unwrap_or_default(),
@@ -303,6 +307,7 @@ impl JobDefineService {
             key_kills: jp.key_kills,
             exclude_company: jp.exclude_company,
             exclude_job: jp.exclude_job,
+            filter_offline: jp.filter_offline,
             interval: jpa.interval.unwrap_or_default(),
             timeout: jpa.timeout.unwrap_or_default(),
             wt2_cookie: jpa.wt2_cookie.unwrap_or_default(),

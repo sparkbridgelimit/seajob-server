@@ -12,6 +12,7 @@ pub struct JobDefineCreateRequest {
     pub hello_text: Option<String>,
     pub exclude_company: Option<Vec<String>>,
     pub exclude_job: Option<Vec<String>>,
+    pub filter_offline: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -25,6 +26,7 @@ pub struct JobDefineUpdateRequest {
     pub key_kills: Option<Vec<String>>,
     pub exclude_company: Option<Vec<String>>,
     pub exclude_job: Option<Vec<String>>,
+    pub filter_offline: Option<bool>,
     pub hello_text: Option<String>,
     pub wt2_cookie: Option<String>,
 }
